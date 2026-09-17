@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sugarless1101</title>
+<meta name="description" content="Masaki Sato / Sugarless1101 — AI Security, Web Security">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #4691D4;
+    --sky-deep: #2F6FAE;
+    --sky-pale: #DCEAF7;
+    --bg: #F4F8FC;
+    --surface: #FFFFFF;
+    --ink: #14283F;
+    --muted: #5F7590;
+    --line: #D6E2EF;
+    --font: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; }
+  a { color: var(--sky-deep); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; border-radius: 3px; }
+  h1, h2, h3, p, ul { margin: 0; }
+  ul { padding: 0; list-style: none; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+  /* sky band + hero */
+  .band { background: var(--sky); height: 200px; }
+  .hero { display: flex; align-items: flex-end; gap: 24px; margin-top: -64px; }
+  .avatar { width: 128px; height: 128px; border-radius: 50%; object-fit: cover; flex: none; border: 5px solid var(--bg); background: var(--surface); }
+  .hero-text { padding-bottom: 6px; }
+  .hero h1 { font-size: 30px; font-weight: 700; line-height: 1.2; }
+  .hero .handle { font-weight: 500; }
+  .hero .handle a { color: var(--sky-deep); }
+  .meta { margin-top: 18px; color: var(--muted); font-size: 14.5px; line-height: 1.7; }
+  .chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips span, .chips a { padding: 1px 12px; border-radius: 999px; background: var(--sky-pale); color: var(--sky-deep); font-size: 13.5px; font-weight: 500; }
+  .chips a:hover { background: var(--sky); color: #fff; text-decoration: none; }
+
+  section { margin-top: 60px; }
+  section h2 { font-size: 20px; font-weight: 700; padding-left: 14px; border-left: 3px solid var(--sky); line-height: 1.3; margin-bottom: 20px; }
+
+  /* toggles */
+  details { border: 0; }
+  summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 8px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg); flex: none; position: relative; top: -3px; }
+  details[open] summary::after { transform: rotate(-135deg); top: 1px; }
+  .detail { margin-top: 8px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 14.5px; }
+  .detail p + p { margin-top: 4px; }
+
+  /* projects */
+  .projects > li { padding: 16px 0; border-top: 1px solid var(--line); }
+  .projects > li:last-child { border-bottom: 1px solid var(--line); }
+  .projects h3 { font-size: 17px; font-weight: 700; display: inline; }
+  .projects h3 a { color: var(--ink); }
+  .projects .lead { color: var(--muted); font-size: 15px; margin-top: 2px; }
+  .badge { display: inline-block; padding: 0 10px; border-radius: 4px; background: var(--sky-pale); color: var(--sky-deep); font-weight: 700; font-size: 14px; line-height: 1.8; margin-right: 8px; }
+  .badge a { color: inherit; }
+  .projects .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .projects .tags span { font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 0 8px; line-height: 1.7; }
+
+  /* timeline: oldest at top, newest at bottom */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before { content: ""; position: absolute; left: 5px; top: 10px; bottom: 10px; width: 2px; background: var(--line); }
+  .year { position: relative; font-size: 15px; font-weight: 700; color: var(--sky-deep); margin: 26px 0 6px; }
+  .year:first-child { margin-top: 0; }
+  .year::before { content: ""; position: absolute; left: -26px; top: 9px; width: 12px; height: 12px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 0 4px var(--bg); }
+  .timeline li { display: grid; grid-template-columns: 64px 1fr; column-gap: 12px; padding: 4px 0; font-size: 15.5px; }
+  .timeline time { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .timeline .sub { color: var(--muted); font-size: 14px; margin-left: 8px; }
+  .timeline .plan { color: var(--muted); }
+
+  .links { display: flex; flex-wrap: wrap; gap: 10px 28px; font-size: 15.5px; }
+  .links a { font-weight: 500; }
+  footer { margin-top: 80px; padding: 16px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 560px) {
+    .band { height: 140px; }
+    .hero { margin-top: -48px; gap: 16px; }
+    .avatar { width: 96px; height: 96px; }
+    .hero h1 { font-size: 24px; }
+    .timeline li { grid-template-columns: 1fr; row-gap: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="wrap">
+
+  <header class="hero">
+    <img class="avatar" src="icon.png" alt="">
+    <div class="hero-text">
+      <h1>Masaki Sato</h1>
+      <p class="handle"><a href="https://x.com/Sugarless1101">@Sugarless1101</a></p>
+    </div>
+  </header>
+
+  <p class="meta">OCA大阪デザイン&amp;テクノロジー専門学校 ホワイトハッカー専攻（2028年卒業見込）<br><a href="https://wolfvillage.org">WOLF VILLAGE</a> 運営</p>
+  <div class="chips"><span>AI × Security</span><span>Web Security</span><a href="https://github.com/denoland/deno/security/advisories/GHSA-v8fw-85r8-5m23">CVE-2026-49411</a></div>
+
+  <section id="projects">
+    <h2>Projects</h2>
+    <ul class="projects">
+      <li>
+        <details>
+          <summary><h3>OSS脆弱性調査 AIエージェント基盤</h3></summary>
+          <div class="detail">
+            <p>AIのセキュリティ活用に興味があり、人の介入なしにほぼフルオートで放置するだけで CVE が取れる調査ハーネス・実行環境を作れるか、を検証しているプロジェクトです。</p>
+            <p>CLI型エージェント（Claude Code / Codex）を VM 上で常駐運用し、自分は方針決めと最終確認のみ。その結果として採番されたのが CVE-2026-49411（Deno）で、報告と最終トリアージだけ手動で行いました。</p>
+          </div>
+        </details>
+        <p class="lead"><span class="badge"><a href="https://github.com/denoland/deno/security/advisories/GHSA-v8fw-85r8-5m23">CVE-2026-49411</a></span>Deno の <code>--deny-net</code> バイパスを報告・採番（GHSA-v8fw-85r8-5m23）</p>
+        <div class="tags"><span>Claude Code</span><span>Codex</span><span>Linux</span></div>
+      </li>
+      <li>
+        <details>
+          <summary><h3><a href="https://github.com/sugarless1101/mental-cat">mental-cat</a></h3></summary>
+          <div class="detail">
+            <p>固定 JSON スキーマでの応答、入力タグによる分離、重み付けスコア＋二段階しきい値の検出器、出力側ガードレール、<code>/admin</code> でのLLMOps可視化。</p>
+          </div>
+        </details>
+        <p class="lead">Laravel × gpt-4o のチャットアプリに、多層のプロンプトインジェクション対策を実装</p>
+        <div class="tags"><span>Laravel</span><span>LLM</span><span>Prompt Injection</span></div>
+      </li>
+      <li>
+        <details>
+          <summary><h3><a href="https://github.com/sugarless1101/SQLi-LAB">SQLi-LAB</a></h3></summary>
+          <div class="detail">
+            <p>UNION-based / Boolean-based Blind / Time-based Blind / Second-order の4種を再現。Burp Suite での検証手順を記事にしています。</p>
+          </div>
+        </details>
+        <p class="lead">SQLインジェクション学習用のやられアプリ ＋ <a href="https://zenn.dev/sugarless1101/articles/dcdf5fcaa54736">Zenn 記事</a></p>
+        <div class="tags"><span>Laravel</span><span>Burp Suite</span></div>
+      </li>
+      <li>
+        <details>
+          <summary><h3><a href="https://github.com/sugarless1101/port-to-cve">port-to-cve</a></h3></summary>
+          <div class="detail">
+            <p>バイブコーディングの時代にコーディング能力を落とさないよう、AIをなるべく使わずに実装。TCP connect スキャン、バナー正規化、NVD API v2.0 での CVSS 取得（v4.0 → v3.1 → v3.0 → v2 フォールバック）。</p>
+          </div>
+        </details>
+        <p class="lead">ポートスキャン結果から NVD API で CVE / CVSS を照会する CLI</p>
+        <div class="tags"><span>Python</span><span>NVD API</span></div>
+      </li>
+      <li>
+        <h3><a href="https://github.com/sugarless1101/ai_screen_analyzer">ai_screen_analyzer</a></h3>
+        <p class="lead">HDMI キャプチャした別 PC の画面を Claude Code で解析する GUI ツール</p>
+        <div class="tags"><span>Python</span><span>Claude Code</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <section id="timeline">
+    <h2>Timeline</h2>
+    <div class="timeline">
+
+      <div class="year">2024</div>
+      <ul>
+        <li><time>2024.04</time><span>OCA大阪デザイン&amp;テクノロジー専門学校 入学</span></li>
+        <li><time>2024.07</time><span>CompTIA Network+ 取得</span></li>
+      </ul>
+
+      <div class="year">2025</div>
+      <ul>
+        <li><time>2025.01</time><span>CompTIA Security+ 取得</span></li>
+        <li><time>2025.02</time>
+          <details>
+            <summary>LITALICOワンダーオンライン 講師<span class="sub">〜 2026.03</span></summary>
+            <div class="detail"><p>在宅で130以上のご家庭を担当。Scratch / Minecraft Education / Blender、年長〜高校生のほぼ1on1授業。</p></div>
+          </details>
+        </li>
+        <li><time>2025.07</time><span>SECCON Beginners CTF 2025 参加</span></li>
+        <li><time>2025.09</time><span>EC-Council CCT 取得</span></li>
+      </ul>
+
+      <div class="year">2026</div>
+      <ul>
+        <li><time>2026.03</time><span><a href="https://github.com/sugarless1101/port-to-cve">port-to-cve</a> 公開</span></li>
+        <li><time>2026.04</time><span>Zenn「<a href="https://zenn.dev/sugarless1101/articles/dcdf5fcaa54736">Burp Suiteで学ぶSQLインジェクション入門</a>」公開</span></li>
+        <li><time>2026.05</time>
+          <details>
+            <summary>Deno の脆弱性報告が <a href="https://github.com/denoland/deno/security/advisories/GHSA-v8fw-85r8-5m23">GHSA-v8fw-85r8-5m23</a> として公開</summary>
+            <div class="detail"><p>AIエージェント基盤による調査の成果。報告と最終トリアージのみ手動。</p></div>
+          </details>
+        </li>
+        <li><time>2026.06</time><span><span class="badge"><a href="https://github.com/denoland/deno/security/advisories/GHSA-v8fw-85r8-5m23">CVE-2026-49411</a></span>採番</span></li>
+        <li><time>2026.06</time>
+          <details>
+            <summary>SECCON Beginners CTF 2026 参加<span class="sub">WOLF VILLAG, 全体5位</span></summary>
+            <div class="detail"><p>人間主体・AI補助部門では3位。Web 問を担当し、4問に着手して2問 solve。</p></div>
+          </details>
+        </li>
+        <li><time>2026.07</time><span><a href="https://wolfvillage.connpass.com/event/399236/">WOLF VILLAGE 第1回 交流会</a><span class="sub">当日サポート</span></span></li>
+        <li><time>2026.07</time><span>ICI×SST 合同夏季インターン 参加</span></li>
+        <li><time>2026.07</time><span>Hack Fes. 2026 ボランティアスタッフ</span></li>
+        <li><time>2026.07</time><span>MBSD 仕事体験（診断エンジニアコース）参加</span></li>
+        <li><time>2026.08</time><span>セキュリティ・キャンプ2026 全国大会 専門B 修了</span></li>
+        <li><time>2026.08</time><span>GMO Flatt Security サマーインターン 参加</span></li>
+        <li><time>2026.08</time><span>GMO IERAE サマーインターン（Web診断部門）参加</span></li>
+        <li><time>2026.09</time><span>MOTEX インターン（セキュリティブルーコース）参加</span></li>
+        <li><time>2026.09</time><span>Cybozu サマーインターン（プロダクトセキュリティコース）参加</span></li>
+        <li class="plan"><time>2026.10</time><span><a href="https://wolfvillage.connpass.com/event/407195/">WOLF VILLAGE NIGHT #1 〜 LT大会 &amp; 交流会 〜</a> 運営<span class="sub">予定</span></span></li>
+        <li class="plan"><time>2026.11</time><span>CODE BLUE 2026 学生スタッフ<span class="sub">予定</span></span></li>
+      </ul>
+
+    </div>
+  </section>
+
+  <section id="links">
+    <h2>Links</h2>
+    <div class="links">
+      <a href="https://github.com/sugarless1101">GitHub</a>
+      <a href="https://x.com/Sugarless1101">X</a>
+      <a href="https://zenn.dev/sugarless1101">Zenn</a>
+      <a href="https://wolfvillage.org">WOLF VILLAGE</a>
+    </div>
+  </section>
+
+  <footer>© 2026 Sugarless1101</footer>
+</div>
+</body>
+</html>
