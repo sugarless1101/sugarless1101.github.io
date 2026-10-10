@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sugarless1101</title>
 <meta name="description" content="Masaki Sato / Sugarless1101 — AI Security, Web Security">
-<link rel="icon" href="icon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -67,8 +68,6 @@
   .badge a { color: inherit; }
   .projects .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
   .projects .tags span { font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 0 8px; line-height: 1.7; }
-  .projects .contribution { margin-top: 10px; }
-  #triage-announcer { --muted: #596F89; }
 
   /* timeline: oldest at top, newest at bottom */
   .timeline { position: relative; padding-left: 26px; }
@@ -124,20 +123,14 @@
         <div class="tags"><span>Claude Code</span><span>Codex</span><span>Linux</span></div>
       </li>
       <li id="triage-announcer">
-        <h3><a href="https://github.com/K3NLatte/vulns-news">とりあーじアナウンサー</a></h3>
-        <p class="lead">MWS Cup 2026 ハッカソン提出作品 · チーム「浜松鰻」</p>
-        <p class="lead">依存関係から脆弱性情報を絞り込み、LLMの分析結果と根拠を記事で確認するWebアプリ。</p>
-        <p class="lead">主担当：フロントエンド・DB設計。機能提案、ユースケース整理、提出動画の制作にも参加。</p>
-        <div class="tags"><span>Vue</span><span>TypeScript</span><span>SQLite</span><span>チーム開発</span></div>
-        <details class="contribution">
-          <summary>担当した実装とチームでの役割</summary>
+        <details>
+          <summary><h3><a href="https://github.com/K3NLatte/vulns-news">とりあーじアナウンサー</a></h3></summary>
           <div class="detail">
-            <p>記事一覧・詳細画面、検索・絞り込み・並べ替えなどのフロントエンドを開発。解析の状態や未確認事項、出典を読める表示、スマートフォンでの見やすさ、操作テストも整備しました。</p>
-            <p>DBではSQLiteのスキーマと保存・取得処理、解析JSONとの変換を設計・実装しました。提出版のサーバーはJSON保存を使用し、SQLiteの保存処理は独立した実装です。</p>
-            <p>分業で進めるアジャイル開発の中で、画面の具体案を見せながら機能やプロダクトの位置づけを提案。アイデア出し・壁打ち・ユースケース整理を手伝い、提出用の紹介動画も制作しました。</p>
-            <p><a href="https://github.com/K3NLatte/vulns-news/commits/main/?author=sugarless1101">コミット履歴</a> · <a href="https://github.com/K3NLatte/vulns-news/pull/20">DB設計・実装</a></p>
+            <p>MWS Cup 2026 ハッカソンにチーム「浜松鰻」で提出。主にフロントエンド・DB設計を担当し、動画制作や機能提案、壁打ち・ユースケース整理にも参加。</p>
           </div>
         </details>
+        <p class="lead">依存関係から脆弱性情報を絞り込み、分析結果と根拠を読むWebアプリ</p>
+        <div class="tags"><span>Vue</span><span>TypeScript</span><span>SQLite</span><span>チーム開発</span></div>
       </li>
       <li>
         <details>
@@ -239,7 +232,7 @@
         <li><time>2026.08</time><span>GMO IERAE サマーインターン（Web診断部門）参加</span></li>
         <li><time>2026.09</time><span>MOTEX インターン（セキュリティブルーコース）参加</span></li>
         <li><time>2026.09</time><span>Cybozu サマーインターン（プロダクトセキュリティコース）参加</span></li>
-        <li><time>2026</time><span>MWS Cup 2026 ハッカソンにチーム「浜松鰻」で<a href="#triage-announcer">とりあーじアナウンサー</a>を提出</span></li>
+        <li><time>2026</time><span><a href="#triage-announcer">MWS Cup 2026 ハッカソン</a> 作品提出<span class="sub">チーム「浜松鰻」</span></span></li>
         <li><time>2026.10</time><span><a href="https://wolfvillage.connpass.com/event/407195/">WOLF VILLAGE NIGHT #1 〜 LT大会 &amp; 交流会 〜</a> 運営&amp;LT登壇<span class="sub"><a href="https://www.docswell.com/s/sugarless1101/K9NDQV-wb-lt-seccamp-26b">登壇資料</a></span></span></li>
         <li class="plan"><time>2026.11</time><span>CODE BLUE 2026 学生スタッフ<span class="sub">予定</span></span></li>
       </ul>
