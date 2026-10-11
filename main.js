@@ -1,7 +1,41 @@
 (() => {
   'use strict';
-  const IMAGE_VERSION = '22'; // node .claude/tools/version-images.mjs syncs HTML/CSS.
+  const IMAGE_VERSION = '24'; // node tools/version-images.mjs syncs HTML/CSS.
   const root = document.documentElement;
+  // Build content-dependent UI before text splitting and interaction registration.
+  function buildWorkNavigation() {
+    const works=[...document.querySelectorAll('li.work')];
+    const full=document.querySelector('.wire-toc-full');
+    const compact=document.querySelector('.wire-toc-compact textPath');
+    const ns='http://www.w3.org/2000/svg';
+    full.replaceChildren();
+    works.forEach((work,i)=>{
+      const number=String(i+1).padStart(2,'0');
+      if(!work.id){
+        const base=`work-${number}`;let id=base,suffix=2;
+        while(document.getElementById(id))id=`${base}-${suffix++}`;
+        work.id=id;
+      }
+      let marker=work.querySelector('.work-number');
+      if(!marker){marker=document.createElement('span');marker.className='work-number';work.prepend(marker);}
+      marker.textContent=number;marker.setAttribute('aria-hidden','true');
+      const heading=work.querySelector('h3').cloneNode(true);
+      heading.querySelectorAll('svg,.outward,[aria-hidden="true"]').forEach(node=>node.remove());
+      const title=heading.textContent.replace(/\s+/g,' ').trim();
+      const link=document.createElementNS(ns,'a');
+      link.setAttribute('href',`#${work.id}`);link.setAttribute('aria-label',`${title}へ`);link.setAttribute('tabindex','0');
+      const text=document.createElementNS(ns,'text'),path=document.createElementNS(ns,'textPath');
+      text.setAttribute('dy','-7');path.setAttribute('href','#wire-toc-path');
+      const label=document.createElementNS(ns,'tspan');label.textContent=title;path.append(label);
+      if(i<works.length-1){const separator=document.createElementNS(ns,'tspan');separator.setAttribute('aria-hidden','true');separator.textContent=' · ';path.append(separator);}
+      text.append(path);link.append(text);full.append(link);
+    });
+    compact.textContent=`制作 · ${works.length} works`;
+  }
+  buildWorkNavigation();
+  document.querySelectorAll('.work .phrase,.appearance .phrase,.event-copy .phrase,.links .phrase').forEach(node=>{
+    if(/^[\x20-\x7e]+$/.test(node.textContent))node.classList.add('breakable-token');
+  });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const fine = matchMedia('(hover: hover) and (pointer: fine)');
   const portrait = matchMedia('(max-aspect-ratio: 4/5), (max-width: 720px) and (orientation: portrait)');
@@ -12,6 +46,152 @@
   const location = document.querySelector('.location-name');
   const owners = [hero, ...sections, closing], inView = new Set(), animations = new Set();
   const photos = [], lamps = [], liveTrails = [], windowTrails = [];
+  // URL assignment and decoding live outside the animation loop. Loaded scenes
+  // remain resident for return-to-top and reverse scrolling (v22d).
+  const sceneAssets=new Map(),exposureAssets=new WeakMap(),exposureMates=new WeakMap();
+  const backgroundDecodes=new Map(),decodedBackgrounds=new Set();
+  const nearbyScenes=new Set([hero]),preparedModes=new Set();
+  let sceneAssetsStarted=false,assetObserver=null,assetMargin=0,heroCloudPixels=4800;
+  function assetOwner(node){return node.closest('.opening,.closing,section')||hero;}
+  function selectedAsset(node){
+    if(node.dataset.background){
+      if(node.closest('.finale-sky')){
+        const night=node.classList.contains('mode-night'),width=innerWidth*(devicePixelRatio||1);
+        if(portrait.matches)return night?`images/sky-night-1200.webp?v=${IMAGE_VERSION}`:`images/sky-summer-1200.webp?v=${IMAGE_VERSION}`;
+        if(night&&width<=2560)return `images/sky-night-2560.webp?v=${IMAGE_VERSION}`;
+        if(width>2560)return night?`images/sky-night-5120.webp?v=${IMAGE_VERSION}`:`images/sky-summer-5120.webp?v=${IMAGE_VERSION}`;
+      }
+      const cloud=node.closest('.hero-clouds,.window-cloud');
+      if(cloud){
+        const width=Number(cloud.dataset.assetWidth)||heroCloudPixels;
+        if(width<=3600)return node.dataset.background.replace('.webp',width<=2400?'-2400.webp':'-3600.webp');
+      }
+      return node.dataset.background;
+    }
+    if(node.dataset.mask)return node.dataset.mask;
+    if(node.dataset.href)return node.dataset.href;
+    if(node.classList.contains('window-sky'))return node.classList.contains('mode-night')?`images/layers/sky-night-tall-384.webp?v=${IMAGE_VERSION}`:`images/layers/sky-summer-tall-384.webp?v=${IMAGE_VERSION}`;
+    const picture=node.closest('picture'),source=portrait.matches?picture?.querySelector('source'):null;
+    const set=source?.dataset.srcset||node.dataset.srcset;
+    if(!set)return node.dataset.src;
+    const candidates=set.split(',').map(part=>{const [url,size='1x']=part.trim().split(/\s+/);return {url,size:parseFloat(size),width:size.endsWith('w')};});
+    const target=candidates[0].width?Math.min(innerWidth,2000)*(devicePixelRatio||1):Math.min(devicePixelRatio||1,2);
+    return (candidates.find(candidate=>candidate.size>=target)||candidates.at(-1)).url;
+  }
+  function assetAllowed(asset,mode){return (!asset.mode||asset.mode===mode)&&(!asset.off||offLampWanted);}
+  function registerAsset(node){
+    if(sceneAssets.has(node))return sceneAssets.get(node);
+    const exposure=node.closest('.mode-day,.mode-night');
+    const asset={node,owner:assetOwner(node),mode:node.dataset.assetMode||(exposure?.classList.contains('mode-night')?'night':exposure?'day':null),off:!!node.closest('.lamp-off'),ready:false,url:'',pending:null};
+    sceneAssets.set(node,asset);
+    if(exposure){
+      const records=exposureAssets.get(exposure)||[];records.push(asset);exposureAssets.set(exposure,records);
+      const opposite=exposure.classList.contains('mode-night')?'mode-day':'mode-night';
+      const mate=[...exposure.parentElement.children].find(child=>child.tagName===exposure.tagName&&child.classList.contains(opposite)&&child.classList.contains('lamp-off')===exposure.classList.contains('lamp-off'));
+      if(mate&&!exposureMates.has(exposure)){exposureMates.set(exposure,mate);exposureMates.set(mate,exposure);}
+    }
+    return asset;
+  }
+  function collectSceneAssets(scope){
+    scope.querySelectorAll('img[data-src],image[data-href],[data-background],[data-mask]').forEach(registerAsset);
+    if(sceneAssetsStarted)loadNearbyAssets();
+  }
+  function exposureReady(node){
+    const records=exposureAssets.get(node);
+    return !records||records.every(asset=>asset.ready);
+  }
+  function assetOpacity(node,value){
+    if(!exposureReady(node))return 0;
+    const mate=exposureMates.get(node);
+    // After the 1.2s deadline, keep the old photograph until its mate decodes.
+    return mate&&!exposureReady(mate)&&node.classList.contains(nightMode()?'mode-day':'mode-night')?1:value;
+  }
+  async function loadAsset(asset){
+    const {node}=asset,url=selectedAsset(node);if(!url)return;
+    if(asset.url===url&&asset.pending)return asset.pending;
+    asset.url=url;
+    asset.pending=(async()=>{
+      try{
+        if(node.matches('img')){
+          node.loading='eager';node.src=url;
+          await node.decode();
+        }else{
+          if(!decodedBackgrounds.has(url)){
+            if(!backgroundDecodes.has(url)){
+              const image=new Image();image.decoding='async';image.src=url;
+              const ready=image.decode().then(()=>decodedBackgrounds.add(url)).catch(error=>{backgroundDecodes.delete(url);throw error;});
+              backgroundDecodes.set(url,ready);
+            }
+            await backgroundDecodes.get(url);
+          }
+          if(asset.url!==url)return;
+          if(node.dataset.mask)node.style.maskImage=`url("${url}")`;
+          else if(node.dataset.href)node.setAttribute('href',url);
+          else if(node.classList.contains('window-grain'))node.style.setProperty('--grain-image',`url("${url}")`);
+          else node.style.backgroundImage=`url("${url}")`;
+        }
+        if(asset.url!==url)return;
+        asset.ready=true;lastMix=-1;paintMode();
+        if(node.closest('.cloud-top'))queueGeometry();
+        if(reduced.matches)scheduleSteadyPaint();
+      }catch{
+        // Keep the existing exposure on a failed request; allow a later retry.
+        if(asset.url===url){asset.url='';asset.pending=null;}
+      }
+    })();
+    return asset.pending;
+  }
+  function refreshAsset(node){
+    const asset=sceneAssets.get(node);if(!asset)return;
+    if(nearbyScenes.has(asset.owner)&&assetAllowed(asset,root.dataset.mode))loadAsset(asset);
+  }
+  function loadSceneAssets(owner,mode,{off=false}={}){
+    const jobs=[];
+    sceneAssets.forEach(asset=>{
+      if(asset.owner===owner&&asset.node.isConnected&&assetAllowed(asset,mode)&&(!asset.off||off))jobs.push(loadAsset(asset));
+    });
+    return Promise.all(jobs);
+  }
+  function loadNearbyAssets(){
+    sceneAssets.forEach((asset,node)=>{if(!node.isConnected)sceneAssets.delete(node);});
+    nearbyScenes.forEach(owner=>{
+      loadSceneAssets(owner,root.dataset.mode,{off:offLampWanted});
+      preparedModes.forEach(mode=>loadSceneAssets(owner,mode,{off:offLampWanted}));
+    });
+  }
+  function preloadMode(mode=nightMode()?'day':'night',visibleOnly=false){
+    preparedModes.add(mode);
+    const jobs=[];
+    nearbyScenes.forEach(owner=>{
+      const box=geometry.get(owner),visible=box&&box.top<scrollY+innerHeight&&box.top+box.height>scrollY;
+      const job=loadSceneAssets(owner,mode,{off:offLampWanted});
+      if(!visibleOnly||visible)jobs.push(job);
+    });
+    return Promise.all(jobs);
+  }
+  function refreshAssetObserver(){
+    if(!sceneAssetsStarted)return;
+    const margin=Math.ceil(innerHeight*1.5);
+    if(margin!==assetMargin){
+      assetMargin=margin;assetObserver?.disconnect();
+      assetObserver=new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{if(entry.isIntersecting)nearbyScenes.add(entry.target);else nearbyScenes.delete(entry.target);});
+        loadNearbyAssets();
+      },{rootMargin:`${margin}px 0px`});
+      [hero,...sections,closing].forEach(owner=>assetObserver.observe(owner));
+    }
+    // Cached positions cover restored scroll/hash entry before observer delivery.
+    [hero,...sections,closing].forEach(owner=>{
+      const box=geometry.get(owner);if(!box)return;
+      if(box.top<scrollY+innerHeight+margin&&box.top+box.height>scrollY-margin)nearbyScenes.add(owner);
+      else nearbyScenes.delete(owner);
+    });
+    loadNearbyAssets();
+  }
+  function startSceneAssets(){
+    collectSceneAssets(document);sceneAssetsStarted=true;refreshAssetObserver();
+    if(!lampControl.on)preloadOffLamp();
+  }
   const splitPairs=[];
   const randomBetween = (a,b) => a + Math.random() * (b-a);
   const clamp = v => Math.max(0,Math.min(1,v));
@@ -135,15 +315,15 @@
     const node=document.createElement('div'); node.className=`hero-layer photo-life ${className}`;
     const picture=document.createElement('picture');
     const source=document.createElement('source'); source.media=portrait.media;
-    source.srcset=`images/layers/${stem}-tall.webp?v=${IMAGE_VERSION}${highResolution ? ` 1x, images/layers/${stem}-tall-2x.webp?v=${IMAGE_VERSION} 2x` : ''}`;
+    source.dataset.srcset=`images/layers/${stem}-tall.webp?v=${IMAGE_VERSION}${highResolution ? ` 1x, images/layers/${stem}-tall-2x.webp?v=${IMAGE_VERSION} 2x` : ''}`;
     const img=document.createElement('img'); img.alt=''; img.width=2400; img.height=1350; img.decoding='async'; img.fetchPriority='high';
-    if(highResolution) img.srcset=`images/layers/${stem}-wide.webp?v=${IMAGE_VERSION} 1x, images/layers/${stem}-wide-2x.webp?v=${IMAGE_VERSION} 2x`;
-    img.src=`images/layers/${stem}-wide.webp?v=${IMAGE_VERSION}`; picture.append(source,img); node.append(picture); return node;
+    if(highResolution) img.dataset.srcset=`images/layers/${stem}-wide.webp?v=${IMAGE_VERSION} 1x, images/layers/${stem}-wide-2x.webp?v=${IMAGE_VERSION} 2x`;
+    img.dataset.src=`images/layers/${stem}-wide.webp?v=${IMAGE_VERSION}`; picture.append(source,img); node.append(picture); return node;
   }
   const sky=layerPicture('sky-summer','hero-sky'), lamp=layerPicture('lamp','hero-lamp',true);
   const cloudLayers=['haze','far','mid','near'].map(depth=>{
     const node=document.createElement('div'); node.className=`hero-clouds hero-clouds-${depth} photo-life`;
-    node.style.backgroundImage=`url("images/layers/clouds-${depth}.webp?v=${IMAGE_VERSION}")`; return node;
+    node.dataset.background=`images/layers/clouds-${depth}.webp?v=${IMAGE_VERSION}`; return node;
   });
   const glow=document.createElement('div'); glow.className='lantern-light';
   glow.innerHTML='<span class="lantern-glass"></span><span class="lantern-glow"></span><span class="lantern-halo"></span>';
@@ -211,10 +391,16 @@
   lampButton.addEventListener('pointerdown',event=>{lampGesture={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};},{passive:true});
   lampButton.addEventListener('pointermove',event=>{if(lampGesture&&event.pointerId===lampGesture.id&&Math.hypot(event.clientX-lampGesture.x,event.clientY-lampGesture.y)>8)lampGesture.moved=true;},{passive:true});
   lampButton.addEventListener('pointercancel',()=>lampGesture=null,{passive:true});
-  lampButton.addEventListener('click',event=>{
+  let lampSwitchRequest=0,lampSwitchTarget=lampControl.on;
+  lampButton.addEventListener('click',async event=>{
     const gesture=lampGesture;lampGesture=null;
     if(event.detail!==0&&(!gesture||gesture.moved||Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>8))return;
-    lampControl.from=lampControl.gate*morseState.multiplier;lampControl.on=!lampControl.on;lampControl.changedAt=topLamp.localTime;
+    const request=++lampSwitchRequest;lampSwitchTarget=!lampSwitchTarget;
+    if(!lampSwitchTarget){
+      await preloadOffLamp();
+      if(request!==lampSwitchRequest||![...sceneAssets.values()].filter(asset=>asset.off&&asset.mode===root.dataset.mode).every(asset=>asset.ready))return;
+    }
+    lampControl.from=lampControl.gate*morseState.multiplier;lampControl.on=lampSwitchTarget;lampControl.changedAt=topLamp.localTime;
     lampControl.blink=lampControl.on&&topLamp.localTime-lampControl.lastIgnition>=1.8&&!morseState.active;
     if(lampControl.on)lampControl.lastIgnition=topLamp.localTime;
     morseState.active=false;morseState.next=topLamp.localTime+randomBetween(60,120);
@@ -226,7 +412,7 @@
   finaleHalo.className='finale-lamp-halo';finaleLamp.parentElement.append(finaleHalo);
   const moon=document.createElement('button'); moon.className='hero-moon photo-life';
   moon.type='button';moon.setAttribute('aria-label','夜にする');
-  moon.innerHTML=`<img src="images/moon-day.webp?v=${IMAGE_VERSION}" width="160" height="160" alt="" decoding="async">`;
+  moon.innerHTML=`<img data-src="images/moon-day.webp?v=${IMAGE_VERSION}" width="160" height="160" alt="" decoding="async">`;
   const trailLayer=document.createElement('div'); trailLayer.className='hero-contrails';
   hero.querySelector('.hero-scene').append(sky,...cloudLayers,trailLayer,lamp,glow);
   hero.querySelector('.hero-photo').removeAttribute('aria-hidden');
@@ -251,6 +437,7 @@
     return soft;
   }
   function applyMode(mode,notify=false){
+    preparedModes.clear();
     starScenes.forEach(scene=>scene.fromOpacity=Number(scene.field.style.opacity||0));
     modeFrom=nightMix();modeChangedAt=performance.now()/1000;root.dataset.mode=mode;
     modeButtons.forEach(button=>button.removeAttribute('aria-pressed'));
@@ -267,10 +454,18 @@
     if(reduced.matches)scheduleSteadyPaint();
     if(notify)root.dispatchEvent(new CustomEvent('nightmode:toggle',{bubbles:true,detail:{mode}}));
   }
-  function toggleNightMode(){
-    applyMode(nightMode()?'day':'night',true);
+  let modeRequest=0;
+  async function toggleNightMode(){
+    const request=++modeRequest,target=nightMode()?'day':'night';
+    const ready=preloadMode(target,true);
+    await Promise.race([ready,new Promise(resolve=>setTimeout(resolve,1200))]);
+    if(request!==modeRequest)return;
+    applyMode(target,true);
   }
-  modeButtons.forEach(button=>button.addEventListener('click',toggleNightMode));
+  modeButtons.forEach(button=>{
+    button.addEventListener('click',toggleNightMode);
+    ['pointerenter','focus','pointerdown','touchstart'].forEach(type=>button.addEventListener(type,()=>preloadMode(),{passive:true}));
+  });
   // Rationale §11: new cloud material grows upwind and dissolves before reset.
   document.querySelectorAll('.cloud-body,.cloud-top,.cloud-wisps').forEach(node=>{
     node.dataset.cloudCopy='0';const copy=node.cloneNode(true);copy.dataset.cloudCopy='1';node.after(copy);
@@ -281,7 +476,7 @@
     const window=document.querySelector(`#${id} .sky-window`);
     window.style.setProperty('--crop',["30% 12%","65% 34%","45% 60%","75% 80%"][i]);
     window.querySelectorAll('.window-cloud').forEach((cloud,j)=>{
-      cloud.style.setProperty('--window-cloud',`url("images/layers/clouds-${j?'near':'far'}.webp?v=${IMAGE_VERSION}")`);
+      cloud.dataset.background=`images/layers/clouds-${j?'near':'far'}.webp?v=${IMAGE_VERSION}`;
       cloud.style.setProperty('--window-period',`${(j?24:43)+i*7}s`);
       cloud.style.setProperty('--window-phase',`${-i*8-j*5}s`);
       cloud.style.bottom=`${j?[-5,3,-1,7][i]:[16,24,12,20][i]}%`;
@@ -295,13 +490,14 @@
     day.classList.add('mode-day');
     const night=day.cloneNode(true);night.classList.remove('mode-day');night.classList.add('mode-night');
     const image=night.matches('img')?night:night.querySelector('img');
-    image.src=nightSrc;image.removeAttribute('srcset');image.loading='eager';
-    if(nightSrcset)image.srcset=nightSrcset;
+    image.dataset.src=nightSrc;image.removeAttribute('data-srcset');image.loading='eager';
+    if(nightSrcset)image.dataset.srcset=nightSrcset;
     night.querySelectorAll('source').forEach(source=>{
       const lamp=nightSrc.includes('lamp-');
-      source.srcset=lamp?`images/layers/lamp-tall-night.webp?v=${IMAGE_VERSION} 1x, images/layers/lamp-tall-night-2x.webp?v=${IMAGE_VERSION} 2x`:`images/layers/sky-night-tall.webp?v=${IMAGE_VERSION}`;
+      source.dataset.srcset=lamp?`images/layers/lamp-tall-night.webp?v=${IMAGE_VERSION} 1x, images/layers/lamp-tall-night-2x.webp?v=${IMAGE_VERSION} 2x`:`images/layers/sky-night-tall.webp?v=${IMAGE_VERSION}`;
     });
     day.after(night);
+    exposureMates.set(day,night);exposureMates.set(night,day);
   }
   pairPhoto(sky,`images/layers/sky-night-wide.webp?v=${IMAGE_VERSION}`);
   pairPhoto(lamp,`images/layers/lamp-wide-night.webp?v=${IMAGE_VERSION}`,`images/layers/lamp-wide-night.webp?v=${IMAGE_VERSION} 1x, images/layers/lamp-wide-night-2x.webp?v=${IMAGE_VERSION} 2x`);
@@ -311,41 +507,48 @@
     pairPhoto(node,`images/cumulonimbus/${name}-night-2000.webp?v=${IMAGE_VERSION}`,`images/cumulonimbus/${name}-night-2000.webp?v=${IMAGE_VERSION} 2000w, images/cumulonimbus/${name}-night.webp?v=${IMAGE_VERSION} 4000w`);
   });
   ['.pole-photo','.signal-pole','.signal-head','.finale-lamp'].forEach(selector=>{
-    const node=document.querySelector(selector),source=node.querySelector(':scope > img').getAttribute('src');
+    const node=document.querySelector(selector),source=node.querySelector(':scope > img').getAttribute('data-src');
     pairPhoto(node,source.replace('.webp','-night.webp'));
   });
   function splitDayLamp(node,variant){
     const day=node.querySelector(':scope > .mode-day');
     const replace=src=>src.replace(/lamp-(wide|tall|finale)(-2x)?\.webp/g,'lamp-$1$2-dim.webp');
     day.querySelectorAll('source,img').forEach(image=>{
-      for(const attr of ['src','srcset'])if(image.hasAttribute(attr))image.setAttribute(attr,replace(image.getAttribute(attr)));
+      for(const attr of ['data-src','data-srcset'])if(image.hasAttribute(attr))image.setAttribute(attr,replace(image.getAttribute(attr)));
     });
-    if(day.matches('img'))day.src=replace(day.getAttribute('src'));
+    if(day.matches('img'))day.dataset.src=replace(day.getAttribute('data-src'));
     const light=document.createElement('span');light.className='day-lamp-glow';light.setAttribute('aria-hidden','true');
-    const image=document.createElement('img');image.alt='';image.decoding='async';
-    image.src=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION}`;light.append(image);node.append(light);
+    const image=document.createElement('img');image.alt='';image.decoding='async';light.classList.add('mode-day');
+    image.dataset.src=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION}`;if(node===lamp)image.fetchPriority='high';light.append(image);node.append(light);
     return light;
   }
   const dayGlow=splitDayLamp(lamp,'wide'),finaleDayGlow=splitDayLamp(finaleLamp,'finale');
   const litLampPictures=[...lamp.querySelectorAll(':scope > picture')];
   litLampPictures.forEach(node=>node.classList.add('lamp-lit'));
+  let offLampPrepared=false,offLampWanted=false;
   function preloadOffLamp(){
-    const surface=photos.find(p=>p.node===lamp).surface;
-    for(const lit of litLampPictures){
-      const off=lit.cloneNode(true);off.classList.remove('lamp-lit');off.classList.add('lamp-off','top-decoration');
-      off.setAttribute('aria-hidden','true');
-      off.querySelectorAll('source,img').forEach(image=>{
-        for(const attr of ['src','srcset'])if(image.hasAttribute(attr)){
-          image.setAttribute(attr,image.getAttribute(attr).replace(/lamp-(wide|tall)(-night)?(-2x)?(-dim)?\.webp/g,'lamp-$1$2$3-off.webp'));
-        }
-        if(image.matches('img')){image.fetchPriority='low';image.loading='eager';}
-      });
-      surface.prepend(off);modeLayers.add(off);
+    offLampWanted=true;
+    if(!offLampPrepared){
+      offLampPrepared=true;
+      const surface=photos.find(p=>p.node===lamp).surface;
+      for(const lit of litLampPictures){
+        const off=lit.cloneNode(true);off.classList.remove('lamp-lit');off.classList.add('lamp-off','top-decoration');
+        off.setAttribute('aria-hidden','true');
+        off.querySelectorAll('source,img').forEach(image=>{
+          image.removeAttribute('src');image.removeAttribute('srcset');
+          for(const attr of ['data-src','data-srcset'])if(image.hasAttribute(attr)){
+            image.setAttribute(attr,image.getAttribute(attr).replace(/lamp-(wide|tall)(-night)?(-2x)?(-dim)?\.webp/g,'lamp-$1$2$3-off.webp'));
+          }
+          if(image.matches('img')){image.fetchPriority='auto';image.loading='eager';}
+        });
+        surface.prepend(off);modeLayers.add(off);
+      }
+      collectSceneAssets(lamp);lastMix=-1;queueGeometry();
     }
-    lastMix=-1;refreshGeometry();paintMode();
+    return loadSceneAssets(hero,root.dataset.mode,{off:true});
   }
-  // Start these requests only after the initial page and its images have loaded.
-  const queueOffLamp=()=>setTimeout(preloadOffLamp,0);
+  ['pointerenter','focus','pointerdown','touchstart'].forEach(type=>lampButton.addEventListener(type,preloadOffLamp,{passive:true}));
+  const queueOffLamp=()=>setTimeout(preloadOffLamp,8000);
   if(document.readyState==='complete')queueOffLamp();
   else addEventListener('load',queueOffLamp,{once:true});
   const finaleDaySurface=document.createElement('span');finaleDaySurface.className='finale-day-surface';
@@ -356,18 +559,22 @@
   glow.append(dayHalo);finaleLamp.parentElement.append(finaleDayHalo);
   function pairBackground(node,source){
     const day=document.createElement('span');day.className='background-exposure mode-day';
-    day.style.backgroundImage=getComputedStyle(node).backgroundImage;
-    const night=day.cloneNode();night.className='background-exposure mode-night';night.style.backgroundImage=source;
-    node.style.backgroundImage='none';node.prepend(day,night);
+    day.dataset.background=node.dataset.background;
+    const night=day.cloneNode();night.className='background-exposure mode-night';night.dataset.background=source;
+    delete node.dataset.background;node.style.backgroundImage='none';node.prepend(day,night);
   }
-  cloudLayers.forEach((node,i)=>pairBackground(node,`url("images/layers/clouds-${['haze','far','mid','near'][i]}-night.webp?v=${IMAGE_VERSION}")`));
-  pairBackground(document.querySelector('.finale-sky'),`image-set(url("images/sky-night.webp?v=${IMAGE_VERSION}") 1x,url("images/sky-night-5120.webp?v=${IMAGE_VERSION}") 2x)`);
-  pairBackground(document.querySelector('.finale-low-clouds'),`url("images/layers/clouds-far-night.webp?v=${IMAGE_VERSION}")`);
+  cloudLayers.forEach((node,i)=>pairBackground(node,`images/layers/clouds-${['haze','far','mid','near'][i]}-night.webp?v=${IMAGE_VERSION}`));
+  const finaleSky=document.querySelector('.finale-sky');
+  finaleSky.dataset.background=`images/sky-summer.webp?v=${IMAGE_VERSION}`;
+  pairBackground(finaleSky,`images/sky-night.webp?v=${IMAGE_VERSION}`);
+  const lowClouds=document.querySelector('.finale-low-clouds');
+  lowClouds.dataset.background=`images/layers/clouds-far-summer.webp?v=${IMAGE_VERSION}`;
+  pairBackground(lowClouds,`images/layers/clouds-far-night.webp?v=${IMAGE_VERSION}`);
   document.querySelectorAll('.sky-window').forEach(node=>{
     const image=node.querySelector('.window-sky');image.classList.add('mode-day');
-    const night=image.cloneNode();night.className='window-sky mode-night';night.src=`images/layers/sky-night-tall.webp?v=${IMAGE_VERSION}`;night.loading='eager';image.after(night);
-    const grain=document.createElement('span');grain.className='window-grain mode-night';night.after(grain);
-    node.querySelectorAll('.window-cloud').forEach((cloud,i)=>pairBackground(cloud,`url("images/layers/clouds-${i?'near':'far'}-night.webp?v=${IMAGE_VERSION}")`));
+    const night=image.cloneNode();night.className='window-sky mode-night';night.dataset.src=`images/layers/sky-night-tall.webp?v=${IMAGE_VERSION}`;night.loading='eager';image.after(night);
+    const grain=document.createElement('span');grain.className='window-grain mode-night';grain.dataset.background=`images/layers/sky-night-grain.webp?v=${IMAGE_VERSION}`;night.after(grain);
+    node.querySelectorAll('.window-cloud').forEach((cloud,i)=>pairBackground(cloud,`images/layers/clouds-${i?'near':'far'}-night.webp?v=${IMAGE_VERSION}`));
     const stars=document.createElement('span');stars.className='window-stars mode-night';
     for(let i=0;i<4;i++){const star=document.createElement('i');star.style.cssText=`left:${18+i*19}%;top:${12+(i*13)%33}%;`;stars.append(star);}
     node.querySelector('.window-depth').append(stars);
@@ -381,7 +588,7 @@
     lastMix=mix;
     modeLayers.forEach(node=>{
       if(node.classList.contains('lamp-lit'))return;
-      const value=node.classList.contains('mode-night')?mix:1-mix;
+      const value=assetOpacity(node,node.classList.contains('mode-night')?mix:1-mix);
       // Reveal before the next composite; release the unused exposure at zero.
       opacity(node,value);
       node.style.willChange=value>0&&value<1&&!node.closest('.top-dormant,.finale-dormant')?'opacity':'';
@@ -470,6 +677,8 @@
   }
   const glass=glow.querySelector('.lantern-glass');
   const finaleGlass=finaleLamp.querySelector('.finale-lamp-glass'),finaleBloom=finaleLamp.querySelector('.finale-lamp-bloom');
+  finaleGlass.dataset.mask=`images/layers/lamp-glass-mask-finale.webp?v=${IMAGE_VERSION}`;
+  finaleGlass.dataset.assetMode='night';
   function paintLampElements(s) {
     const mix=nightMix(),i=s.intensity*(1+s.feedback*.12),feedback=s.feedback*(s.flicker??1)*s.intensity;
     if(s.marker){
@@ -483,7 +692,7 @@
     if(s.el.matches('.links a'))s.el.querySelectorAll('.focus-character').forEach(char=>opacity(char,.92+feedback*.08,false));
     if(s.el===glow){
       const light=composeTopLight(s,mix);s.composed=light;
-      litLampPictures.forEach(node=>opacity(node,(node.classList.contains('mode-night')?mix:1-mix)*light.gate));
+      litLampPictures.forEach(node=>opacity(node,assetOpacity(node,node.classList.contains('mode-night')?mix:1-mix)*light.gate));
       opacity(dayGlow,light.day+(1-mix)*light.residual);opacity(dayHalo,.32*light.day);
       opacity(glass,.75*light.night+mix*light.residual);
       opacity(bloom,.42*mix*(s.intensity*light.gate*morseState.multiplier)**1.4);
@@ -517,7 +726,7 @@
     return{x:64+Math.cos(angle)*radius,y:64+Math.sin(angle)*radius,phase:Math.random()*100};
   });
   const yellow=document.createElement('div');yellow.className='signal-yellow';
-  yellow.innerHTML=`<img src="images/fixtures/signal-head-yellow-night.webp?v=${IMAGE_VERSION}" width="2000" height="1400" alt="" decoding="async"><span class="signal-yellow-bloom"></span>`;
+  yellow.innerHTML=`<img data-asset-mode="night" data-src="images/fixtures/signal-head-yellow-night.webp?v=${IMAGE_VERSION}" width="2000" height="1400" alt="" decoding="async"><span class="signal-yellow-bloom"></span>`;
   signalHead.append(yellow);
   // Lens geometry: 2000×1400, centre (720.86,607), major 130.29,
   // minor 105.86, clockwise 113.40°. The bloom uses the same ellipse.
@@ -668,7 +877,8 @@
       p.surface.querySelectorAll('img').forEach(img=>img.style.cssText=`left:${-x}px;top:${-y}px;width:${w}px;height:${h}px`);
       const crown=p.surface.querySelector('.cloud-crown');
       if(crown){
-        crown.style.maskImage=`url("${p.surface.querySelector('img').currentSrc||p.surface.querySelector('img').src}")`;
+        const material=p.surface.querySelector('img');
+        if(material.currentSrc||material.getAttribute('src'))crown.style.maskImage=`url("${material.currentSrc||material.src}")`;
         crown.style.maskSize=`${w}px ${h}px`;crown.style.maskPosition=`${-x}px ${-y}px`;
       }
     });
@@ -733,7 +943,7 @@
         const part=document.createElement('span');part.className='flow-tile';
         part.style.cssText=`width:${partWidth+2*bleed}px;height:${height}px;${isHero?'':`clip-path:inset(0 ${bleed}px);`}`;
         flow.sources.forEach(source=>{
-          const exposure=source.cloneNode();
+          const exposure=source.cloneNode();exposure.style.backgroundImage='none';
           exposure.style.backgroundSize=`${tile}px ${stripHeight}px`;
           exposure.style.backgroundPosition=`${bleed-start}px ${isLow?`${backgroundY}px`:backgroundY}`;
           exposure.style.backgroundRepeat='repeat-x';exposure.style.willChange='';
@@ -742,6 +952,7 @@
         node.append(part);flow.tiles.push({node:part,offset:cycle*tile+start,width:partWidth,bleed});
       }
       flow.length=cycles*tile;
+      if(sceneAssetsStarted)collectSceneAssets(node);
     });
     lastMix=-1;paintMode();paintFlows(0);
   }
@@ -1043,11 +1254,6 @@
     });
     replaceSplitText(el.firstChild,fragment);
   });
-  function fitUrls(){
-    urls.forEach(el=>el.classList.remove('can-wrap'));
-    const wrapping=urls.map(el=>el.scrollWidth>el.clientWidth+1);
-    urls.forEach((el,i)=>el.classList.toggle('can-wrap',wrapping[i]));
-  }
   const paragraphs=[...document.querySelectorAll('.desc p')];
   paragraphs.forEach(el=>el.classList.add('granular-paragraph'));
   let paragraphWidth=-1;
@@ -1126,7 +1332,7 @@
       const image=document.createElementNS(svgNS,'image');
       image.classList.add(`mode-${mode}`);
       modeLayers.add(image);
-      image.setAttribute('href',`images/fixtures/wire-parts/${def.name}${mode==='night'?'-night':''}.webp?v=${IMAGE_VERSION}`);
+      image.setAttribute('data-href',`images/fixtures/wire-parts/${def.name}${mode==='night'?'-night':''}.webp?v=${IMAGE_VERSION}`);
       image.setAttribute('x',String(-def.anchorX));image.setAttribute('y',String(-def.anchorY));
       image.setAttribute('width',String(def.width));image.setAttribute('height',String(def.height));
       node.append(image);
@@ -1152,7 +1358,7 @@
   const finalPole=document.createElement('div');finalPole.className='finale-pole';finalPole.setAttribute('aria-hidden','true');closingScene.append(finalPole);
   const finalPolePhotos=['day','night'].map(mode=>{
     const image=document.createElement('img');image.alt='';image.decoding='async';image.className=`mode-${mode}`;
-    image.src=`images/fixtures/pole${mode==='night'?'-finale-night':''}.webp?v=${IMAGE_VERSION}`;image.width=3000;image.height=1500;finalPole.append(image);return image;
+    image.dataset.src=`images/fixtures/pole${mode==='night'?'-finale-night':''}.webp?v=${IMAGE_VERSION}`;image.width=3000;image.height=1500;finalPole.append(image);return image;
   });
   const finalSpan={id:'finale',owner:finalBand,svg:finalSvg,paths:finalPaths,birds:[],birdLayer:finalBirdLayer,
     springs:wireDefinitions.slice(0,3).map((_,i)=>new Spring(.42+i*.026,.05,3)),
@@ -1165,8 +1371,8 @@
   function spritePoses(holder,folder,names){
     return names.map(name=>{
       const image=document.createElement('img');image.className='bird-pose';image.alt='';image.decoding='async';
-      image.src=`images/fixtures/${folder}/${name}.webp?v=${IMAGE_VERSION}`;image.srcset=`images/fixtures/${folder}/${name}.webp?v=${IMAGE_VERSION} 1x, images/fixtures/${folder}/${name}-2x.webp?v=${IMAGE_VERSION} 2x`;
-      holder.append(image);return image;
+      image.dataset.src=`images/fixtures/${folder}/${name}.webp?v=${IMAGE_VERSION}`;image.dataset.srcset=`images/fixtures/${folder}/${name}.webp?v=${IMAGE_VERSION} 1x, images/fixtures/${folder}/${name}-2x.webp?v=${IMAGE_VERSION} 2x`;
+      holder.append(image);if(sceneAssetsStarted){registerAsset(image);refreshAsset(image);}return image;
     });
   }
   function showPose(bird,index){
@@ -1366,7 +1572,7 @@
   wireFixture.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.target.closest('.wire-strand,.pole-photo')&&!e.target.closest('.wire-toc a'))reactWires();});
   tocLinks.forEach(a=>a.addEventListener('focus',reactWires));
   tocLinks.forEach((a,i)=>{
-    const target=document.querySelector(a.getAttribute('href')),targetLamp=lamps.find(l=>l.el===target);
+    const target=document.getElementById(a.getAttribute('href').slice(1)),targetLamp=lamps.find(l=>l.el===target);
     createLamp(a,{strength:.65,interactive:true,paint:()=>{
       const state=lamps.find(l=>l.el===a),active=state.feedback>.05;
       a.classList.toggle('is-lit',active);
@@ -1472,20 +1678,27 @@
     wireSvg.style.setProperty('--wire-font-size','14px');wireSvg.style.setProperty('--wire-glow-blur','1px');
     wireSvg.querySelectorAll('text').forEach(el=>el.setAttribute('dy','-7'));
     wireCurrent.setAttribute('r','2');
-    wireFixture.classList.remove('toc-compact');
+    // Hidden full/compact labels cannot be measured reliably. Plain SVG probes
+    // inherit the same typography and never change the displayed mode to measure.
+    const probes=document.createElementNS(svgNS,'g');probes.style.visibility='hidden';
+    const measureLabel=(label,full=false)=>{
+      const text=document.createElementNS(svgNS,'text');text.textContent=label;
+      if(full)text.style.whiteSpace='pre';probes.append(text);return text;
+    };
+    const fullProbes=tocLinks.map(link=>measureLabel(link.querySelector('textPath').textContent,true));
+    const compactLabel=wireSvg.querySelector('.wire-toc-compact');
+    const compactProbe=measureLabel(compactLabel.textContent),fontProbe=measureLabel('国Mgy');
+    wireSvg.append(probes);
     let length=0;
-    wireTextOffsets=tocLinks.map(link=>{const offset=length;length+=link.querySelector('text').getComputedTextLength?.()||0;return offset;});
+    wireTextOffsets=fullProbes.map(text=>{const offset=length;length+=text.getComputedTextLength();return offset;});
+    const compactLength=compactProbe.getComputedTextLength(),labelHeight=Math.max(14,fontProbe.getBBox().height);
+    probes.remove();
     const left=-16;
     let anchorX=innerWidth+16-right-poleWidth*(1-2234/3000),span=anchorX-left;
     const fullTocX=Math.max(32,projectRect.left+32,left+span*.18);
-    const compact=mobile||length>anchorX-fullTocX-24;
+    const compact=mobile||!tocLinks.length||length>anchorX-fullTocX-24;
     wireFixture.classList.toggle('toc-compact',compact);
-    const compactLabel=wireSvg.querySelector('.wire-toc-compact');
-    const labelLength=compact?compactLabel.getComputedTextLength():length;
-    // Measure glyph height without counting the textPath's sag a second time.
-    const fontProbe=document.createElementNS(svgNS,'text');
-    fontProbe.textContent='国Mgy';fontProbe.style.visibility='hidden';wireSvg.append(fontProbe);
-    const labelHeight=Math.max(14,fontProbe.getBBox().height);fontProbe.remove();
+    const labelLength=compact?compactLength:length;
     const tocX=compact?Math.max(32,projectRect.left+32,left+span*.4):fullTocX;
     const candidate=(tension,count)=>{
       const curves=wireDefinitions.map(def=>catenary(span,def.deltaY*wireScale,Math.max(.015,Math.min(.04,def.sagRatio*tension))));
@@ -1565,7 +1778,7 @@
     pole.dataset.wireCount=String(wireFit.visibleCount);
     pole.style.clipPath=`polygon(74.5% 0,100% 0,100% 100%,86% 100%,86% ${wireFit.visibleCount===2?38:wireFit.visibleCount===3?48:100}%,74.5% ${wireFit.visibleCount===2?38:wireFit.visibleCount===3?48:100}%)`;
     wireSprings.forEach((spring,i)=>spring.x=xs[i]);drawWires(true);
-    tocLinks.forEach((a,i)=>a.dataset.wirePosition=String((i+.5)/6));
+    tocLinks.forEach((a,i)=>a.dataset.wirePosition=String((i+.5)/tocLinks.length));
     fitBirds();updateWireHitAreas(true);
   }
   function layoutBox(node){
@@ -1596,10 +1809,12 @@
   const pedPhotos=['day','night'].map(mode=>['off','go-a','go-b'].map(state=>{
     const image=document.createElement('img');image.alt='';image.width=106;image.height=160;image.decoding='async';
     const name=`ped-signal-${state}${mode==='night'?'-night':''}`;
-    image.src=`images/fixtures/ped-signal/${name}.webp?v=${IMAGE_VERSION}`;
-    image.srcset=`images/fixtures/ped-signal/${name}.webp?v=${IMAGE_VERSION} 1x, images/fixtures/ped-signal/${name}-2x.webp?v=${IMAGE_VERSION} 2x`;
+    image.className=`mode-${mode}`;
+    image.dataset.src=`images/fixtures/ped-signal/${name}.webp?v=${IMAGE_VERSION}`;
+    image.dataset.srcset=`images/fixtures/ped-signal/${name}.webp?v=${IMAGE_VERSION} 1x, images/fixtures/ped-signal/${name}-2x.webp?v=${IMAGE_VERSION} 2x`;
     pedestrian.append(image);return image;
   }));
+  pedPhotos[0].forEach((image,i)=>{exposureMates.set(image,pedPhotos[1][i]);exposureMates.set(pedPhotos[1][i],image);});
   const pedState={elapsed:0,hover:false,focused:false,returning:false,go:1,pose:0};
   backToTop.addEventListener('pointerenter',()=>{pedState.hover=true;paintPedestrian(0);});
   backToTop.addEventListener('pointerleave',()=>{pedState.hover=false;paintPedestrian(0);});
@@ -1618,7 +1833,7 @@
     const a=pedState.pose===0?blend:1-blend,b=1-a,mix=nightMix();
     pedPhotos.forEach((images,i)=>{
       const exposure=i?mix:1-mix;
-      opacity(images[0],exposure);opacity(images[1],exposure*pedState.go*a);opacity(images[2],exposure*pedState.go*b);
+      opacity(images[0],assetOpacity(images[0],exposure));opacity(images[1],assetOpacity(images[1],exposure)*pedState.go*a);opacity(images[2],assetOpacity(images[2],exposure)*pedState.go*b);
     });
   }
   function drawFinalWires(force=false){
@@ -1890,7 +2105,7 @@
   }
   function paintFinalPole(){
     if(!spanVisible(finalSpan))return;
-    const mix=nightMix();finalPolePhotos.forEach((node,i)=>opacity(node,i?mix:1-mix));
+    const mix=nightMix();finalPolePhotos.forEach((node,i)=>opacity(node,assetOpacity(node,i?mix:1-mix)));
   }
   function syncFinalVisibility(){
     for(const node of [finalBand,finalPole,pedestrian,...fireworks.active.map(f=>f.node)]){
@@ -1935,7 +2150,6 @@
     clearTimeout(geometryTimer);geometryTimer=null;
     clearTimeout(splitSourceTimer);splitSourceTimer=null;
     fitHeroTitle();
-    fitUrls();
     splitLines();
     fitSkyWindows();
     fitSectionGaps();
@@ -1964,8 +2178,9 @@
     const dg=tall?{x:446,y:1000,w:194,h:202}:{x:706,y:326,w:174,h:182};
     dayGlow.style.cssText=`left:${(dg.x-lb.x)*cover}px;top:${(dg.y-lb.y)*cover}px;width:${dg.w*cover}px;height:${dg.h*cover}px`;
     const dayGlowImage=dayGlow.querySelector('img'),variant=tall?'tall':'wide';
-    dayGlowImage.src=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION}`;
-    dayGlowImage.srcset=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION} 1x, images/layers/lamp-${variant}-2x-glow.webp?v=${IMAGE_VERSION} 2x`;
+    dayGlowImage.dataset.src=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION}`;
+    dayGlowImage.dataset.srcset=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION} 1x, images/layers/lamp-${variant}-2x-glow.webp?v=${IMAGE_VERSION} 2x`;
+    if(sceneAssetsStarted)refreshAsset(dayGlowImage);
     dayGlowImage.style.cssText=`left:${-dg.x*cover}px;top:${-dg.y*cover}px;width:${c.w*cover}px;height:${c.h*cover}px`;
     bloom.style.left=`${x}px`;bloom.style.top=`${y}px`;bloom.style.width=bloom.style.height=`${Math.min(220,unit*62*.6)}px`;
     // Alpha-weighted glass centres and support widths measured from the masks.
@@ -2005,10 +2220,12 @@
     const heroTextBottom=Math.max(...['.hero-name','.hero-sub'].map(selector=>layoutBox(hero.querySelector(selector)).bottom-layoutBox(hero).top));
     const originalStripHeight=Math.max(150,Math.min(320,h*.26));
     const heroStripHeight=reduced.matches?originalStripHeight:Math.max(1,Math.min(originalStripHeight,h-heroTextBottom-12));
+    heroCloudPixels=Math.ceil(Math.max(originalStripHeight*4800/900,w/1.92)*(devicePixelRatio||1));
     cloudLayers[3].style.setProperty('--paper-overdraw',`${h*.4+12}px`);
     cloudLayers.forEach((node,i)=>{
       const height=heroStripHeight,tile=Math.max(originalStripHeight*4800/900,w/1.92);
       node.style.setProperty('--tile-width',`${tile}px`);node.style.setProperty('--strip-height',`${height}px`);
+      node.dataset.assetWidth=String(Math.ceil(tile*(devicePixelRatio||1)));
       node.style.left='0px';
     });
     const low=document.querySelector('.finale-low-clouds');
@@ -2050,7 +2267,7 @@
     // resize. New flights use the refreshed geometry while old ones fade out.
     fitFinalSpan();
     for(const node of [finalBand,finalPole,pedestrian])geometry.set(node,layoutBox(node));
-    fitVisibleFinaleSky();fitSplitSources();fittedViewportWidth=root.clientWidth;fittedWindowWidth=innerWidth;fittedViewportHeight=innerHeight;fittedDpr=devicePixelRatio||1;updateScroll();
+    fitVisibleFinaleSky();fitSplitSources();fittedViewportWidth=root.clientWidth;fittedWindowWidth=innerWidth;fittedViewportHeight=innerHeight;fittedDpr=devicePixelRatio||1;updateScroll();refreshAssetObserver();
   }
   let geometryTimer=null,fittedViewportHeight=0,fittedWindowWidth=0,fittedDpr=0;
   function queueGeometry(event){
@@ -2110,7 +2327,7 @@
     // The defocused exposure is painted once. Only its opacity and displacement
     // change; the browser never has to re-rasterize an animated blur radius.
     const box=el.getBoundingClientRect(),parent=el.offsetParent||el.parentElement,parentBox=parent.getBoundingClientRect();
-    const ghost=el.cloneNode(true);ghost.classList.add('focus-ghost');ghost.setAttribute('aria-hidden','true');
+    const ghost=el.cloneNode(true);ghost.classList.add('focus-ghost');ghost.setAttribute('aria-hidden','true');ghost.inert=true;
     ghost.querySelectorAll('.lamp-switch').forEach(button=>button.remove());
     [ghost,...ghost.querySelectorAll('*')].forEach(node=>{node.removeAttribute('id');node.removeAttribute('data-reveal');node.removeAttribute('tabindex');});
     const walker=document.createTreeWalker(ghost,NodeFilter.SHOW_TEXT),texts=[];
@@ -2902,6 +3119,7 @@
   let savedOverflow='',savedPadding='',menuFocusFrame=null;
   menuButton.hidden=false;
   function openMenu(){
+    preloadMode();
     if(menuOpen)return;menuOpen=true;savedOverflow=document.body.style.overflow;savedPadding=document.body.style.paddingRight;
     document.body.style.paddingRight=`${innerWidth-root.clientWidth}px`;document.body.style.overflow='hidden';
     root.classList.add('menu-open');syncMotion();menu.hidden=false;menuButton.setAttribute('aria-expanded','true');closeButton.focus({preventScroll:true});
@@ -2933,7 +3151,11 @@
   const filter=document.createElement('div');filter.className='filter';filter.setAttribute('role','group');filter.setAttribute('aria-label','年譜の絞り込み');
   const count=document.createElement('p');count.className='count';count.setAttribute('aria-live','polite');count.setAttribute('aria-atomic','true');
   function setCount(n){const number=document.createElement('span');number.textContent=n;count.replaceChildren(number,' 件');}
-  ['すべて','学校','資格','仕事・インターン','CTF・ハッカソン','制作・報告','イベント・コミュニティ'].forEach((category,i)=>{
+  const preferredCategories=['学校','資格','仕事・インターン','CTF・ハッカソン','制作・報告','イベント・コミュニティ'];
+  const usedCategories=[...new Set(rows.map(row=>row.dataset.cat).filter(Boolean))];
+  const categories=['すべて',...preferredCategories.filter(category=>usedCategories.includes(category)),
+    ...usedCategories.filter(category=>category!=='すべて'&&!preferredCategories.includes(category))];
+  categories.forEach((category,i)=>{
     const button=document.createElement('button');button.type='button';button.textContent=category;button.setAttribute('aria-pressed',String(i===0));
     button.addEventListener('click',()=>{
       [...filter.children].forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
@@ -2943,7 +3165,7 @@
     });filter.append(button);
   });
   setCount(rows.length);historyBody.prepend(filter,count);
-  root.classList.add('js');refreshGeometry();motionReady=true;applyMode(root.dataset.mode||'day');
+  root.classList.add('js');refreshGeometry();startSceneAssets();motionReady=true;applyMode(root.dataset.mode||'day');
   if(reduced.matches)applyReducedMotion();
   addEventListener('pointermove',e=>{if(fine.matches)pointer={x:(e.clientX/innerWidth-.5)*2,y:(e.clientY/innerHeight-.5)*2};},{passive:true});
   addEventListener('blur',()=>pointer={x:0,y:0});

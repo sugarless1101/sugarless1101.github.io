@@ -20,6 +20,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="main.js" defer></script>
+<noscript><style>
+img[data-src] { display:none; }
+.finale-sky { background-image:image-set(url("images/sky-summer.webp?v=24") 1x,url("images/sky-summer-5120.webp?v=24") 2x); }
+.finale-low-clouds { background-image:url("images/layers/clouds-far-summer.webp?v=24"); }
+.finale-lamp-glass { mask-image:url("images/layers/lamp-glass-mask-finale.webp?v=24"); }
+</style></noscript>
 </head>
 <body>
 <a class="skip-link" href="#main">本文へ移動</a>
@@ -61,7 +67,7 @@
 <main id="main" tabindex="-1">
 <section class="opening" id="top" aria-labelledby="hero-title">
 <div class="hero-photo" aria-hidden="true">
-<div class="hero-scene"><noscript><picture class="hero-image is-active"><source media="(max-aspect-ratio: 4/5)" srcset="images/hero-summer-tall.webp?v=22 1200w, images/hero-summer-tall-2400.webp?v=22 2400w" sizes="max(115.5vw, 59.0718svh)" type="image/webp" width="1200" height="2133"><img src="images/hero-summer-wide.webp?v=22" srcset="images/hero-summer-wide.webp?v=22 2400w, images/hero-summer-wide-5120.webp?v=22 5120w" sizes="max(117.6vw, 186.6667svh)" width="2400" height="1350" alt="" decoding="async" fetchpriority="high"></picture></noscript></div>
+<div class="hero-scene"><noscript><picture class="hero-image is-active"><source media="(max-aspect-ratio: 4/5)" srcset="images/hero-summer-tall.webp?v=24 1200w, images/hero-summer-tall-2400.webp?v=24 2400w" sizes="max(115.5vw, 59.0718svh)" type="image/webp" width="1200" height="2133"><img src="images/hero-summer-wide.webp?v=24" srcset="images/hero-summer-wide.webp?v=24 2400w, images/hero-summer-wide-5120.webp?v=24 5120w" sizes="max(117.6vw, 186.6667svh)" width="2400" height="1350" alt="" decoding="async" fetchpriority="high"></picture></noscript></div>
 <div class="hero-mist"></div>
 </div>
 <div class="hero-caption">
@@ -83,7 +89,7 @@
 <div class="wire-band">
 <div class="fixture fixture-wires">
 <div class="fixture-sway wire-scene">
-<div class="pole-photo photo-life" aria-hidden="true"><img src="images/fixtures/pole.webp?v=22" width="3000" height="1500" alt="" decoding="async" loading="lazy"></div>
+<div class="pole-photo photo-life" aria-hidden="true"><img data-src="images/fixtures/pole.webp?v=24" width="3000" height="1500" alt="" decoding="async" loading="lazy"><noscript><img src="images/fixtures/pole.webp?v=24" width="3000" height="1500" alt="" decoding="async" loading="lazy"></noscript></div>
 <svg class="wire-toc" viewBox="0 0 3000 1500" role="group" aria-label="電線に沿った制作の目次">
 <defs><filter id="wire-softness" x="-5%" y="-50%" width="110%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="0.25"/></filter></defs>
 <g class="wire-strands" aria-hidden="true">
@@ -93,20 +99,13 @@
 <path class="wire-strand wire-service" d="M 0 585 C 744 788 1488 918 2234 749"/>
 </g><g class="wire-parts" aria-hidden="true"></g>
 <g class="wire-coordinates">
-<g class="wire-toc-full">
-<a href="#work-01" aria-label="OSS脆弱性調査 AIエージェント基盤へ" tabindex="0"><text dy="-7"><textPath href="#wire-toc-path" startOffset="1%"><tspan>OSS脆弱性調査</tspan><tspan aria-hidden="true"> · </tspan></textPath></text></a>
-<a href="#work-02" aria-label="とりあーじアナウンサーへ" tabindex="0"><text dy="-7"><textPath href="#wire-toc-path"><tspan>とりあーじアナウンサー</tspan><tspan aria-hidden="true"> · </tspan></textPath></text></a>
-<a href="#work-03" aria-label="mental-catへ" tabindex="0"><text dy="-7"><textPath href="#wire-toc-path"><tspan>mental-cat</tspan><tspan aria-hidden="true"> · </tspan></textPath></text></a>
-<a href="#work-04" aria-label="SQLi-LABへ" tabindex="0"><text dy="-7"><textPath href="#wire-toc-path"><tspan>SQLi-LAB</tspan><tspan aria-hidden="true"> · </tspan></textPath></text></a>
-<a href="#work-05" aria-label="port-to-cveへ" tabindex="0"><text dy="-7"><textPath href="#wire-toc-path"><tspan>port-to-cve</tspan><tspan aria-hidden="true"> · </tspan></textPath></text></a>
-<a href="#work-06" aria-label="ai_screen_analyzerへ" tabindex="0"><text dy="-7"><textPath href="#wire-toc-path"><tspan>ai_screen_analyzer</tspan></textPath></text></a>
-</g>
-<text class="wire-toc-compact" dy="-7"><textPath href="#wire-toc-path" startOffset="55%">制作 · 6 works</textPath></text>
+<g class="wire-toc-full"></g>
+<text class="wire-toc-compact" dy="-7"><textPath href="#wire-toc-path" startOffset="55%"></textPath></text>
 <circle class="wire-current" r="3" aria-hidden="true"/>
 </g></svg>
 </div></div></div>
-<div class="sec-head"><div class="sky-window photo-life" aria-hidden="true"><span class="window-exposure"><span class="window-depth"><img class="window-sky" src="images/layers/sky-summer-tall.webp?v=22" width="1200" height="2133" alt="" decoding="async" loading="lazy"><span class="window-cloud window-cloud-far"></span><span class="window-cloud window-cloud-near"></span><span class="window-contrails"></span></span></span></div><h2 id="projects-title"><span class="jp">制作</span><span class="en" lang="en">Projects</span></h2></div><div class="sec-body"><ol class="works">
-<li class="work" id="work-01"><span class="work-number" aria-hidden="true">01</span><div class="work-copy">
+<div class="sec-head"><div class="sky-window photo-life" aria-hidden="true"><span class="window-exposure"><span class="window-depth"><img class="window-sky" data-src="images/layers/sky-summer-tall.webp?v=24" width="1200" height="2133" alt="" decoding="async" loading="lazy"><noscript><img class="window-sky" src="images/layers/sky-summer-tall.webp?v=24" width="1200" height="2133" alt="" decoding="async" loading="lazy"></noscript><span class="window-cloud window-cloud-far"></span><span class="window-cloud window-cloud-near"></span><span class="window-contrails"></span></span></span></div><h2 id="projects-title"><span class="jp">制作</span><span class="en" lang="en">Projects</span></h2></div><div class="sec-body"><ol class="works">
+<li class="work" id="work-01"><span class="work-number" aria-hidden="true"></span><div class="work-copy">
 <h3><span class="phrase">OSS脆弱性調査</span> <span class="phrase">AIエージェント基盤</span></h3>
 <p class="medium" lang="en">Claude Code, Codex, Linux</p>
 <p class="lead"><a href="https://github.com/denoland/deno/security/advisories/GHSA-v8fw-85r8-5m23"><span class="identifier">CVE-2026-49411</span></a> Deno の <code>--deny-net</code> <span class="phrase">バイパス</span>を報告・採番（<span class="identifier">GHSA-v8fw-85r8-5m23</span>）</p>
@@ -115,7 +114,7 @@
             <p>CLI型エージェント（Claude Code / Codex）を VM 上で常駐運用し、自分は方針決めと最終確認のみ。その結果として採番されたのが <span class="identifier">CVE-2026-49411</span>（Deno）で、報告と最終トリアージだけ手動で行いました。</p>
           </div>
 </div></li>
-<li class="work" id="work-02"><span id="triage-announcer" class="anchor-alias" aria-hidden="true"></span><span class="work-number" aria-hidden="true">02</span><div class="work-copy">
+<li class="work" id="work-02"><span id="triage-announcer" class="anchor-alias" aria-hidden="true"></span><span class="work-number" aria-hidden="true"></span><div class="work-copy">
 <h3><a href="https://github.com/K3NLatte/vulns-news"><span class="phrase">とりあーじ</span><span class="phrase">アナウンサー</span> <svg class="outward" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false"><path d="M3 11 11 3M3 3h8v8"/></svg></a></h3>
 <p class="medium"><span lang="en">Vue, TypeScript, SQLite</span>, <span class="phrase">チーム開発</span></p>
 <p class="lead"><span class="phrase">依存関係</span>から<span class="phrase">脆弱性情報</span>を絞り込み、<span class="phrase">分析結果</span>と根拠を読むWebアプリ</p>
@@ -123,7 +122,7 @@
             <p>MWS Cup <time datetime="2026">2026</time> ハッカソンにチーム「浜松鰻」で提出。主にフロントエンド・DB設計を担当し、動画制作や機能提案、壁打ち・ユースケース整理にも参加。</p>
           </div>
 </div></li>
-<li class="work" id="work-03"><span class="work-number" aria-hidden="true">03</span><div class="work-copy">
+<li class="work" id="work-03"><span class="work-number" aria-hidden="true"></span><div class="work-copy">
 <h3 lang="en"><a href="https://github.com/sugarless1101/mental-cat">mental-cat <svg class="outward" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false"><path d="M3 11 11 3M3 3h8v8"/></svg></a></h3>
 <p class="medium" lang="en">Laravel, LLM, Prompt Injection</p>
 <p class="lead">Laravel × gpt-4o の<span class="phrase">チャットアプリ</span>に、多層の<span class="phrase">プロンプトインジェクション</span>対策を実装</p>
@@ -131,7 +130,7 @@
             <p>固定 JSON スキーマでの応答、入力タグによる分離、重み付けスコア＋二段階しきい値の検出器、出力側ガードレール、<code>/admin</code> でのLLMOps可視化。</p>
           </div>
 </div></li>
-<li class="work" id="work-04"><span class="work-number" aria-hidden="true">04</span><div class="work-copy">
+<li class="work" id="work-04"><span class="work-number" aria-hidden="true"></span><div class="work-copy">
 <h3 lang="en"><a href="https://github.com/sugarless1101/SQLi-LAB">SQLi-LAB <svg class="outward" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false"><path d="M3 11 11 3M3 3h8v8"/></svg></a></h3>
 <p class="medium" lang="en">Laravel, Burp Suite</p>
 <p class="lead">SQL<span class="phrase">インジェクション</span>学習用のやられアプリ ＋ <a href="https://zenn.dev/sugarless1101/articles/dcdf5fcaa54736">Zenn 記事</a></p>
@@ -139,7 +138,7 @@
             <p>UNION-based / Boolean-based Blind / Time-based Blind / Second-order の4種を再現。Burp Suite での検証手順を記事にしています。</p>
           </div>
 </div></li>
-<li class="work" id="work-05"><span class="work-number" aria-hidden="true">05</span><div class="work-copy">
+<li class="work" id="work-05"><span class="work-number" aria-hidden="true"></span><div class="work-copy">
 <h3 lang="en"><a href="https://github.com/sugarless1101/port-to-cve">port-to-cve <svg class="outward" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false"><path d="M3 11 11 3M3 3h8v8"/></svg></a></h3>
 <p class="medium" lang="en">Python, NVD API</p>
 <p class="lead"><span class="phrase">ポートスキャン</span>結果から NVD API で CVE / CVSS を照会する CLI</p>
@@ -147,7 +146,7 @@
             <p>バイブコーディングの時代にコーディング能力を落とさないよう、AIをなるべく使わずに実装。TCP connect スキャン、バナー正規化、NVD API v2.0 での CVSS 取得（v4.0 → v3.1 → v3.0 → v2 フォールバック）。</p>
           </div>
 </div></li>
-<li class="work" id="work-06"><span class="work-number" aria-hidden="true">06</span><div class="work-copy">
+<li class="work" id="work-06"><span class="work-number" aria-hidden="true"></span><div class="work-copy">
 <h3 lang="en"><a href="https://github.com/sugarless1101/ai_screen_analyzer"><span class="identifier">ai_screen_analyzer</span> <svg class="outward" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false"><path d="M3 11 11 3M3 3h8v8"/></svg></a></h3>
 <p class="medium" lang="en">Python, Claude Code</p>
 <p class="lead">HDMI <span class="phrase">キャプチャ</span>した別 PC の画面を Claude Code で解析する GUI ツール</p>
@@ -155,11 +154,11 @@
 </ol></div></section>
 <section class="folio-section page-width" id="talks" aria-labelledby="talks-title">
 <div class="fixture fixture-signal" tabindex="0" role="img" aria-label="青信号。触れると灯器が揺れる">
-<div class="signal-pole photo-life"><img src="images/fixtures/signal-pole.webp?v=22" width="2000" height="1400" alt="" decoding="async" loading="lazy"></div>
-<div class="signal-head photo-life"><img src="images/fixtures/signal-head-off.webp?v=22" width="2000" height="1400" alt="" decoding="async" loading="lazy">
-<div class="signal-on signal-lit"><img src="images/fixtures/signal-head-on.webp?v=22" width="2000" height="1400" alt="" decoding="async" loading="lazy"></div><span class="signal-bloom"></span><canvas class="signal-led" width="128" height="128" aria-hidden="true"></canvas>
+<div class="signal-pole photo-life"><img data-src="images/fixtures/signal-pole.webp?v=24" width="2000" height="1400" alt="" decoding="async" loading="lazy"><noscript><img src="images/fixtures/signal-pole.webp?v=24" width="2000" height="1400" alt="" decoding="async" loading="lazy"></noscript></div>
+<div class="signal-head photo-life"><img data-src="images/fixtures/signal-head-off.webp?v=24" width="2000" height="1400" alt="" decoding="async" loading="lazy"><noscript><img src="images/fixtures/signal-head-off.webp?v=24" width="2000" height="1400" alt="" decoding="async" loading="lazy"></noscript>
+<div class="signal-on signal-lit"><img data-src="images/fixtures/signal-head-on.webp?v=24" width="2000" height="1400" alt="" decoding="async" loading="lazy"><noscript><img src="images/fixtures/signal-head-on.webp?v=24" width="2000" height="1400" alt="" decoding="async" loading="lazy"></noscript></div><span class="signal-bloom"></span><canvas class="signal-led" width="128" height="128" aria-hidden="true"></canvas>
 </div></div>
-<div class="sec-head"><div class="sky-window photo-life" aria-hidden="true"><span class="window-exposure"><span class="window-depth"><img class="window-sky" src="images/layers/sky-summer-tall.webp?v=22" width="1200" height="2133" alt="" decoding="async" loading="lazy"><span class="window-cloud window-cloud-far"></span><span class="window-cloud window-cloud-near"></span><span class="window-contrails"></span></span></span></div><h2 id="talks-title"><span class="jp">登壇</span><span class="en" lang="en">Talks</span></h2></div><div class="sec-body"><ul class="appearances"><li class="appearance">
+<div class="sec-head"><div class="sky-window photo-life" aria-hidden="true"><span class="window-exposure"><span class="window-depth"><img class="window-sky" data-src="images/layers/sky-summer-tall.webp?v=24" width="1200" height="2133" alt="" decoding="async" loading="lazy"><noscript><img class="window-sky" src="images/layers/sky-summer-tall.webp?v=24" width="1200" height="2133" alt="" decoding="async" loading="lazy"></noscript><span class="window-cloud window-cloud-far"></span><span class="window-cloud window-cloud-near"></span><span class="window-contrails"></span></span></span></div><h2 id="talks-title"><span class="jp">登壇</span><span class="en" lang="en">Talks</span></h2></div><div class="sec-body"><ul class="appearances"><li class="appearance">
 <h3><a href="https://www.docswell.com/s/sugarless1101/K9NDQV-wb-lt-seccamp-26b"><span class="phrase">セキュリティ・キャンプ</span><time datetime="2026">2026</time><span class="phrase">全国大会に</span><span class="phrase">行ってきた話</span> <svg class="outward" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false"><path d="M3 11 11 3M3 3h8v8"/></svg></a></h3>
 <p class="lead"><time datetime="2026-10-04">2026.10.04</time> · <a href="https://wolfvillage.connpass.com/event/407195/">WOLF VILLAGE NIGHT #1</a> にて<span class="phrase">LT登壇</span></p>
 <p class="medium" lang="en">Security Camp, Product Security, LT</p>
@@ -167,7 +166,7 @@
 <p class="lead"><a href="https://www.docswell.com/s/sugarless1101/K9NDQV-wb-lt-seccamp-26b"><span class="phrase">登壇資料</span>（<span class="phrase">公開調整版</span>）</a> · <time datetime="2026-10-07">2026.10.07</time> 公開</p>
 </li></ul></div></section>
 <section class="folio-section page-width" id="timeline" aria-labelledby="timeline-title">
-<div class="sec-head"><div class="sky-window photo-life" aria-hidden="true"><span class="window-exposure"><span class="window-depth"><img class="window-sky" src="images/layers/sky-summer-tall.webp?v=22" width="1200" height="2133" alt="" decoding="async" loading="lazy"><span class="window-cloud window-cloud-far"></span><span class="window-cloud window-cloud-near"></span><span class="window-contrails"></span></span></span></div><h2 id="timeline-title"><span class="jp">年譜</span><span class="en" lang="en">Timeline</span></h2></div><div class="sec-body"><div class="history">
+<div class="sec-head"><div class="sky-window photo-life" aria-hidden="true"><span class="window-exposure"><span class="window-depth"><img class="window-sky" data-src="images/layers/sky-summer-tall.webp?v=24" width="1200" height="2133" alt="" decoding="async" loading="lazy"><noscript><img class="window-sky" src="images/layers/sky-summer-tall.webp?v=24" width="1200" height="2133" alt="" decoding="async" loading="lazy"></noscript><span class="window-cloud window-cloud-far"></span><span class="window-cloud window-cloud-near"></span><span class="window-contrails"></span></span></span></div><h2 id="timeline-title"><span class="jp">年譜</span><span class="en" lang="en">Timeline</span></h2></div><div class="sec-body"><div class="history">
 <div class="year-group"><h3><time datetime="2024">2024</time></h3><ol class="events">
 <li data-cat="学校"><time datetime="2024-04">2024.04</time><div class="event-copy">OCA大阪<span class="phrase">デザイン</span>&amp;<span class="phrase">テクノロジー</span><span class="phrase">専門学校</span> 入学</div>
 </li>
@@ -226,13 +225,13 @@
 <div class="finale-sky photo-life"></div>
 <div class="finale-contrails"></div>
 <div class="cloud-parallax"><div class="cumulonimbus">
-<div class="cloud-layer cloud-base photo-life"><img src="images/cumulonimbus/base-2000.webp?v=22" srcset="images/cumulonimbus/base-2000.webp?v=22 2000w, images/cumulonimbus/base.webp?v=22 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></div>
-<div class="cloud-layer cloud-body photo-life"><img src="images/cumulonimbus/body-2000.webp?v=22" srcset="images/cumulonimbus/body-2000.webp?v=22 2000w, images/cumulonimbus/body.webp?v=22 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></div>
-<div class="cloud-layer cloud-top photo-life"><img src="images/cumulonimbus/top-2000.webp?v=22" srcset="images/cumulonimbus/top-2000.webp?v=22 2000w, images/cumulonimbus/top.webp?v=22 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"><span class="cloud-crown"></span></div>
-<div class="cloud-layer cloud-wisps photo-life"><img src="images/cumulonimbus/wisps-2000.webp?v=22" srcset="images/cumulonimbus/wisps-2000.webp?v=22 2000w, images/cumulonimbus/wisps.webp?v=22 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></div>
+<div class="cloud-layer cloud-base photo-life"><img data-src="images/cumulonimbus/base-2000.webp?v=24" data-srcset="images/cumulonimbus/base-2000.webp?v=24 2000w, images/cumulonimbus/base.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"><noscript><img src="images/cumulonimbus/base-2000.webp?v=24" srcset="images/cumulonimbus/base-2000.webp?v=24 2000w, images/cumulonimbus/base.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></noscript></div>
+<div class="cloud-layer cloud-body photo-life"><img data-src="images/cumulonimbus/body-2000.webp?v=24" data-srcset="images/cumulonimbus/body-2000.webp?v=24 2000w, images/cumulonimbus/body.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"><noscript><img src="images/cumulonimbus/body-2000.webp?v=24" srcset="images/cumulonimbus/body-2000.webp?v=24 2000w, images/cumulonimbus/body.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></noscript></div>
+<div class="cloud-layer cloud-top photo-life"><img data-src="images/cumulonimbus/top-2000.webp?v=24" data-srcset="images/cumulonimbus/top-2000.webp?v=24 2000w, images/cumulonimbus/top.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"><noscript><img src="images/cumulonimbus/top-2000.webp?v=24" srcset="images/cumulonimbus/top-2000.webp?v=24 2000w, images/cumulonimbus/top.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></noscript><span class="cloud-crown"></span></div>
+<div class="cloud-layer cloud-wisps photo-life"><img data-src="images/cumulonimbus/wisps-2000.webp?v=24" data-srcset="images/cumulonimbus/wisps-2000.webp?v=24 2000w, images/cumulonimbus/wisps.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"><noscript><img src="images/cumulonimbus/wisps-2000.webp?v=24" srcset="images/cumulonimbus/wisps-2000.webp?v=24 2000w, images/cumulonimbus/wisps.webp?v=24 4000w" sizes="(max-width: 2000px) 100vw, 2000px" width="4000" height="2667" alt="" decoding="async" loading="lazy"></noscript></div>
 </div></div>
 <div class="finale-low-clouds photo-life"></div>
-<div class="finale-lamp photo-life"><img src="images/layers/lamp-finale.webp?v=22" width="280" height="1331" alt="" decoding="async" loading="lazy"><span class="finale-lamp-glass"></span><span class="finale-lamp-bloom"></span></div>
+<div class="finale-lamp photo-life"><img data-src="images/layers/lamp-finale.webp?v=24" width="280" height="1331" alt="" decoding="async" loading="lazy"><noscript><img src="images/layers/lamp-finale.webp?v=24" width="280" height="1331" alt="" decoding="async" loading="lazy"></noscript><span class="finale-lamp-glass"></span><span class="finale-lamp-bloom"></span></div>
 </div>
 <section class="folio-section page-width" id="links" aria-labelledby="links-title">
 <div class="sec-head"><h2 id="links-title"><span class="jp">リンク</span><span class="en" lang="en">Links</span></h2></div>

@@ -22,7 +22,9 @@ ol,ul { padding:0; list-style:none; }
 h1,h2,h3 { text-wrap:balance; }
 h1,h2,h3,dd,.lead,.event-copy { word-break:auto-phrase; }
 p { max-width:38em; text-wrap:pretty; }
-.phrase,.identifier { white-space:nowrap; }
+.identifier { white-space:nowrap; }
+/* Keep each phrase together unless it exceeds the full available line. */
+.phrase { display:inline-block; max-width:100%; white-space:normal; word-break:keep-all; overflow-wrap:anywhere; }
 .desc p,.note,.talk-description { word-break:normal; line-break:strict; }
 a { color:var(--ultra-deep); text-decoration:underline; text-decoration-color:transparent; text-decoration-thickness:1px; text-underline-offset:4px; transition:text-decoration-color var(--motion-off); }
 button { padding:0; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
@@ -76,6 +78,10 @@ code { font:inherit; font-size:.9em; background:var(--code-bg, rgba(31,43,58,.07
 .lead { margin-top:12px; }
 .lead a,.desc a,.events a,.profile dd a { display:inline-block; min-height:24px; padding-block:2px; }
 .work h3 a,.appearance h3 a { display:inline-block; min-height:24px; }
+.work-copy,.appearance,.work h3 a,.appearance h3 a,.links a > * { min-width:0; max-width:100%; }
+.work-copy,.appearance,.event-copy,.link-name,.link-url { overflow-wrap:anywhere; }
+/* Retain Japanese phrase boundaries; identifiers can break within long Latin tokens. */
+:is(.work,.appearance,.event-copy,.links) :is(.identifier,.breakable-token) { white-space:normal; overflow-wrap:anywhere; }
 .desc,.talk-description { margin-top:12px; font-size:15px; line-height:1.85; color:var(--ink-2); }
 .desc p + p { margin-top:8px; }
 .medium { margin-top:8px; font:italic 16.5px/1.7 var(--f-latin); color:var(--ink-3); }
@@ -103,10 +109,9 @@ code { font:inherit; font-size:.9em; background:var(--code-bg, rgba(31,43,58,.07
 .planned > time { font-style:italic; }
 .links li + li { margin-top:var(--gap-item); }
 .links a { position:relative; display:grid; grid-template-columns:12rem minmax(0,1fr) auto; gap:12px; align-items:baseline; min-height:44px; padding-block:8px; text-decoration:none; isolation:isolate; }
-.link-name { color:var(--ink); font:400 21px/1.4 var(--f-latin); white-space:nowrap; }
-.link-url { min-width:0; font-size:14px; color:var(--ink-3); white-space:nowrap; overflow-wrap:normal; word-break:normal; }
-.link-url.can-wrap { white-space:normal; }
-.url-part { white-space:nowrap; }
+.link-name { color:var(--ink); font:400 21px/1.4 var(--f-latin); }
+.link-url { min-width:0; font-size:14px; color:var(--ink-3); white-space:normal; overflow-wrap:anywhere; word-break:normal; }
+.url-part { white-space:normal; overflow-wrap:anywhere; }
 .links .outward { font-size:18px; }
 .links a.over-sky { border-radius:12px; background:var(--row-paper); padding-inline:16px; margin-inline:-16px; }
 /* Focus, hover and touch share one lamp controller. */
@@ -165,9 +170,9 @@ html[data-mode="night"] .nightmode-toggle { text-decoration-color:var(--ultra); 
 .hero-name { display:inline-flex; align-items:baseline; gap:.06em; }
 .hero-letter,.hero-sub-letter,.focus-character,.reveal-character { display:inline-block; white-space:pre; }
 .hero-letter,.hero-sub-letter {  }
-.text-phrase { display:inline-block; white-space:nowrap; }
+.text-phrase { display:inline-block; max-width:100%; white-space:normal; word-break:keep-all; overflow-wrap:anywhere; }
 .hero-name > span,.hero-name .hero-letter,.hero-sub-letter {  }
-.text-phrase { display:inline-flex; align-items:baseline; gap:inherit; }
+.text-phrase { display:inline-flex; align-items:baseline; gap:inherit; flex-wrap:wrap; }
 .hero-sub { max-width:none; margin-top:calc(var(--hero-name-size) * .26); font:400 clamp(17px,calc(var(--hero-name-size) * .26),40px)/1.5 var(--font-signature); letter-spacing:.14em; }
 .opening :focus-visible { outline-color:var(--sun-light); }
 .scroll-cue { position:absolute; bottom:max(48px,15svh); left:50%; transform:translateX(-50%); z-index:10; padding-inline:12px; color:var(--sun-light); font:300 clamp(14px,1.15vw,18px)/1.5 var(--font-signature); letter-spacing:.2em; text-shadow:0 2px 24px var(--text-shadow); }
@@ -176,7 +181,7 @@ html[data-mode="night"] .nightmode-toggle { text-decoration-color:var(--ultra); 
 .scroll-dot { position:absolute; top:0; left:-2.5px; width:6px; height:6px; border-radius:50%; background:currentColor; animation:flow-scroll 2.6s linear infinite; }
 .lantern-light { position:absolute; inset:0; z-index:4; pointer-events:none; }
 .lantern-glass,.lantern-glow { position:absolute; display:block; background:var(--lamp-white); }
-.lantern-glass { left:var(--img-x); top:var(--img-y); width:var(--img-width); height:var(--img-height); mask-image:image-set(url("images/layers/lamp-glass-mask-wide.webp?v=22") 1x,url("images/layers/lamp-glass-mask-wide-2x.webp?v=22") 2x); mask-size:100% 100%; mask-repeat:no-repeat; opacity:.30; }
+.lantern-glass { left:var(--img-x); top:var(--img-y); width:var(--img-width); height:var(--img-height); mask-image:image-set(url("images/layers/lamp-glass-mask-wide.webp?v=24") 1x,url("images/layers/lamp-glass-mask-wide-2x.webp?v=24") 2x); mask-size:100% 100%; mask-repeat:no-repeat; opacity:.30; }
 .lantern-glow { translate:-50% -50%; border-radius:50%; background:radial-gradient(circle,var(--lamp-white) 0%,rgba(234,251,255,.35) 28%,transparent 70%); filter:blur(10px); opacity:.12; }
 .hero-contrails { position:absolute; inset:0; z-index:2; pointer-events:none; }
 .sky-trail { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; color:var(--lamp-white); }
@@ -219,14 +224,14 @@ html[data-mode="night"] .nightmode-toggle { text-decoration-color:var(--ultra); 
 /* Keep paper under the upper scene feather; the opaque photo hides the edge color. */
 .closing { position:relative; isolation:isolate; background:linear-gradient(var(--paper),var(--paper)) top / 100% 45vh no-repeat,linear-gradient(var(--closing-edge),var(--closing-edge)) bottom / 100% 6px no-repeat var(--closing-edge); }
 .closing-scene { position:absolute; top:0; bottom:0; left:0; right:0; z-index:-1; overflow:clip; pointer-events:none; mask-image:linear-gradient(to bottom,transparent,#000 45vh,#000 calc(100% - 6px),transparent); }
-.finale-sky { position:absolute; inset:calc(-2.5vh - 10px) -10px; background:var(--sky-field) url("images/sky-summer.webp?v=22") center / cover no-repeat; background-image:image-set(url("images/sky-summer.webp?v=22") 1x,url("images/sky-summer-5120.webp?v=22") 2x); }
+.finale-sky { position:absolute; inset:calc(-2.5vh - 10px) -10px; background:var(--sky-field); background-position:center; background-size:cover; background-repeat:no-repeat; }
 .finale-contrails { position:absolute; inset:0; z-index:1; }
 .cloud-parallax { position:absolute; inset:calc(-7.5vh - 8px) 0; z-index:2; }
 .cumulonimbus { position:absolute; bottom:0; left:50%; width:max(100vw,1400px); aspect-ratio:3 / 2; translate:-50% 0; transform-origin:center bottom; }
 .cloud-layer { position:absolute; inset:0; transform-origin:center bottom; }
 .cloud-layer img { display:block; width:100%; height:100%; object-fit:contain; }
 .cloud-crown { position:absolute; inset:0; background:var(--sun-light); mask-size:100% 100%; mask-repeat:no-repeat; mix-blend-mode:screen; opacity:var(--cloud-crown,.02); pointer-events:none; }
-.finale-low-clouds { position:absolute; z-index:4; bottom:calc(-2.5vh - 10px); left:0; width:120%; height:calc(clamp(100px,18vh,200px) + 5vh + 20px); background:url("images/layers/clouds-far-summer.webp?v=22") left bottom / auto 100% repeat-x;  }
+.finale-low-clouds { position:absolute; z-index:4; bottom:calc(-2.5vh - 10px); left:0; width:120%; height:calc(clamp(100px,18vh,200px) + 5vh + 20px); background-position:left bottom; background-size:auto 100%; background-repeat:repeat-x;  }
 .colophon { position:relative; z-index:4; margin-top:min(var(--gap-section),16vh); }
 .footer-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:0 28px; color:var(--sun-light); font:400 13.5px/1.9 var(--font-signature); text-shadow:0 1px 3px var(--ink),0 2px 7px var(--ink); }
 .footer-row time { font:inherit; }
@@ -321,7 +326,7 @@ html[data-mode="night"] .nightmode-toggle { text-decoration-color:var(--ultra); 
   .hero-name { gap:.12em; }
   .hero-sub { writing-mode:vertical-rl; text-orientation:sideways; white-space:nowrap; margin:0; font-size:max(15px,calc(var(--hero-name-size) * .26)); letter-spacing:.14em; }
   .hero-moon { left:14%; top:17%; width:13vw; min-width:44px; }
-  .lantern-glass { mask-image:image-set(url("images/layers/lamp-glass-mask-tall.webp?v=22") 1x,url("images/layers/lamp-glass-mask-tall-2x.webp?v=22") 2x); }
+  .lantern-glass { mask-image:image-set(url("images/layers/lamp-glass-mask-tall.webp?v=24") 1x,url("images/layers/lamp-glass-mask-tall-2x.webp?v=24") 2x); }
 }
 @media (max-height:620px) and (orientation:landscape) {
   .hero-caption { top:32%; }
@@ -389,7 +394,7 @@ html:not(.js) *,html:not(.js) *::before,html:not(.js) *::after { animation:none!
 .finale-lamp { --finale-lamp-ratio:280 / 1331; --finale-glass-x:28.76%; --finale-glass-y:15.03%; --finale-glass-w:49.32%; --finale-glass-h:14.58%; position:absolute; left:5vw; bottom:0; height:38vh; width:auto; aspect-ratio:var(--finale-lamp-ratio); z-index:3; mask-image:linear-gradient(to bottom,#000 80%,transparent); }
 .finale-lamp img { display:block; width:100%; height:100%; }
 .finale-lamp-glass,.finale-lamp-bloom { position:absolute; background:var(--lamp-white); mix-blend-mode:screen; pointer-events:none; }
-.finale-lamp-glass { inset:0; mask:url("images/layers/lamp-glass-mask-finale.webp?v=22") center / 100% 100% no-repeat; opacity:.1364; }
+.finale-lamp-glass { inset:0; mask-position:center; mask-size:100% 100%; mask-repeat:no-repeat; opacity:.1364; }
 .finale-lamp-bloom { left:var(--finale-glass-x); top:var(--finale-glass-y); width:var(--finale-glass-w); height:var(--finale-glass-h); border-radius:50%; background:radial-gradient(circle,var(--lamp-white),transparent 70%); filter:blur(7px); opacity:.0496;  }
 @media (max-width:960px) {
   .sky-window { width:72px; height:100px; --window-tile:102px; }
@@ -463,7 +468,7 @@ html[data-mode="night"] .night-stars { opacity:1; transition-delay:1.2s; }
 .window-stars { position:absolute; inset:0; }
 .window-stars i { position:absolute; width:1px; height:1px; border-radius:50%; background:#EAF2FF; }
 .window-grain { position:absolute; inset:0; pointer-events:none; }
-.window-grain::before { content:""; position:absolute; inset:0; background:url("images/layers/sky-night-grain.webp?v=22") repeat; opacity:.6; }
+.window-grain::before { content:""; position:absolute; inset:0; background-image:var(--grain-image,none); background-repeat:repeat; opacity:.6; }
 /* The heading is on paper: the photograph stays beside its glyphs. */
 .sky-window { left:48px; }
 html[data-mode="night"] .sky-window .window-exposure::after { opacity:0; }
