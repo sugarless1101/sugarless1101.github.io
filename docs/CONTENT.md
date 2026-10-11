@@ -125,10 +125,12 @@
 画像を追加・差し替えたら、リポジトリのルートで次を行います。
 
 1. `main.js` 先頭の `IMAGE_VERSION` を上げます（例：`'22'` → `'23'`）。
-2. `node tools/version-images.mjs` を実行します。HTML/CSS の画像 URL に `?v=` の版の印を付け、版をそろえます。
+2. `node tools/version-images.mjs` を実行します。HTML/CSS の画像 URL に `?v=` の版の印を付け、版をそろえます。`index.html` が読む `style.css` と `main.js` の版の印（中身から作る）も更新します。
 3. `node tools/version-images.mjs --check` で確認します。
 
 JavaScript が作る画像 URL には `?v=${IMAGE_VERSION}` を付けます。版の印はキャッシュを更新するためのもので、ファイル名は変えません。
+
+`style.css` や `main.js` だけを変えたときも、`node tools/version-images.mjs` を実行してください。版の印が古いままだと、ブラウザが前の CSS や JS を使い続けることがあります（GitHub Pages は 10 分キャッシュされます）。`--check` は、版の印が古いと失敗します。
 
 ## 更新後の確認
 

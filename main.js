@@ -41,11 +41,12 @@
   const coarse = matchMedia('(pointer: coarse)');
   const portrait = matchMedia('(max-aspect-ratio: 4/5), (max-width: 720px) and (orientation: portrait)');
   const hero = document.querySelector('#top'), closing = document.querySelector('.closing');
-  // body's background-color colors Safari's overscroll and toolbar areas (see style.css).
+  // The page background and theme-color color Safari's bars and the space past the page (see style.css).
   const chromeTints=[
-    {className:'chrome-top',owner:hero,bottom:false,shown:false},
-    {className:'chrome-bottom',owner:closing,bottom:true,shown:false}
+    {className:'chrome-top',owner:hero,bottom:false,shown:null},
+    {className:'chrome-bottom',owner:closing,bottom:true,shown:null}
   ];
+  const themeColor=document.querySelector('meta[name="theme-color"]');
   const sectionIds = ['profile', 'projects', 'talks', 'timeline', 'links'];
   const sections = sectionIds.map(id => document.getElementById(id));
   const guide = document.querySelector('.section-guide'), guideLinks = [...guide.querySelectorAll('a')];
@@ -449,7 +450,7 @@
     modeButtons.forEach(button=>button.removeAttribute('aria-pressed'));
     modeButtons[1].textContent=mode==='night'?'朝に戻す':'ナイトモード';
     moon.setAttribute('aria-label',mode==='night'?'朝にする':'夜にする');
-    document.querySelector('meta[name="theme-color"]').content=mode==='night'?'#0F1725':'#F1F5F8';
+    syncThemeColor();
     try{sessionStorage.setItem('portfolio-mode',mode);}catch{/* Storage is optional. */}
     if(mode==='night')clearContrails();
     if(mode==='day')trailOwners.forEach(owner=>owner.next=owner.elapsed+(owner.node===hero?randomBetween(14,22):randomBetween(18,30)));
@@ -695,7 +696,7 @@
     }
     if(s.feedbackNode)opacity(s.feedbackNode,feedback*(.38*(1-mix)+.06*mix));
     if(s.el.matches('.wire-toc a'))opacity(s.el,.88+feedback*.12,false);
-    if(s.el.matches('.links a'))s.el.querySelectorAll('.focus-character').forEach(char=>opacity(char,.92+feedback*.08,false));
+    if(!coarse.matches&&s.el.matches('.links a'))s.el.querySelectorAll('.focus-character').forEach(char=>opacity(char,.92+feedback*.08,false));
     if(s.el===glow){
       const light=composeTopLight(s,mix);s.composed=light;
       litLampPictures.forEach(node=>opacity(node,assetOpacity(node,node.classList.contains('mode-night')?mix:1-mix)*light.gate));
@@ -814,7 +815,21 @@
   const subtitle=document.querySelector('.hero-sub');
   splitDecorativeText(subtitle,'hero-sub-letter');
   const nameLetters=[...document.querySelectorAll('.hero-letter')],subLetters=[...subtitle.querySelectorAll('.hero-sub-letter')];
+  let heroLettersResting=false;
+  function restHeroLetters(){
+    if(heroLettersResting)return;heroLettersResting=true;
+    [...nameLetters,...subLetters].forEach(letter=>{
+      // .84 is the resting value of the shimmer below, so the still letters keep the same tone.
+      letter.style.translate='none';letter.style.transform='';letter.style.opacity='.84';
+      const samples=letter._focusSamples;
+      if(samples){samples.sharp.style.opacity='';samples.soft.style.opacity='0';samples.hunt.style.opacity='0';}
+    });
+  }
   function paintHeroLetters(delta){
+    // Phones keep the letters still: each moving letter is its own layer, and iOS Safari
+    // showed magenta strips at those layers' edges when they repainted together (night switch).
+    if(coarse.matches){restHeroLetters();return;}
+    heroLettersResting=false;
     heroLetterTime+=delta;
     [nameLetters,subLetters].forEach((letters,group)=>letters.forEach((letter,i)=>{
       const t=heroLetterTime,phase=i*.61,amplitude=group?.6:1.6;
@@ -1397,11 +1412,15 @@
     const labels=[...span.svg.querySelectorAll('.wire-toc-full text,.wire-toc-compact')].filter(n=>n.getClientRects().length&&getComputedStyle(n).display!=='none').map(n=>n.getBoundingClientRect());
     if(span===finalSpan){const scene=layoutBox(closing);labels.push(...finaleTextBoxes.map(b=>({left:b.left+scene.left,right:b.right+scene.left,top:b.top+scene.top-scrollY,bottom:b.bottom+scene.top-scrollY})));}
     const pole=(span===projectSpan?span.owner.querySelector('.pole-photo'):finalPole).getBoundingClientRect();
+    // At 960px and below the final wires run just under the links; a 60px radius from the feet left
+    // only the spot behind the lamp. There the sprite (35x25 above its feet) keeps 10px from text and the lamp.
+    const blockers=span===finalSpan&&innerWidth<=960?[...labels,finaleLamp.getBoundingClientRect()]:null;
     const candidates=[];
     for(let wire=0;wire<span.fit.visibleCount;wire++)for(let j=5;j<90;j++){
       const u=j/100,p=projectedWirePoint(wire,u,0,span),x=p.x+base.left,y=p.y+base.top;
       const distance=b=>Math.hypot(Math.max(b.left-x,0,x-b.right),Math.max(b.top-y,0,y-b.bottom));
-      if(x<20||x>innerWidth-20||x>(span===projectSpan?pole.left+pole.width*.745:pole.left)-70||labels.some(b=>distance(b)<60))continue;
+      const blocked=blockers?blockers.some(b=>x+27.5>=b.left&&x-27.5<=b.right&&y+10>=b.top&&y-35<=b.bottom):labels.some(b=>distance(b)<60);
+      if(x<20||x>innerWidth-20||x>(span===projectSpan?pole.left+pole.width*.745:pole.left)-70||blocked)continue;
       candidates.push({wire,u,x:p.x,y:p.y});
     }
     // Farthest separated safe sites, with preference for the upper wire.
@@ -2300,7 +2319,7 @@
     }
   }
   function syncChromeTints(){
-    const y=scrollY,vh=innerHeight;
+    const y=scrollY,vh=innerHeight;let changed=false;
     chromeTints.forEach(tint=>{
       const box=geometry.get(tint.owner);if(!box)return;
       // Clamp rubber-band overscroll and Safari's extra bottom-bar space to
@@ -2309,8 +2328,14 @@
       // The closing scene includes its lower edge (the document's end).
       const visible=box.top<=edge&&(tint.bottom?edge<=box.top+box.height:edge<box.top+box.height);
       if(visible===tint.shown)return;
-      tint.shown=visible;document.body.classList.toggle(tint.className,visible);
+      tint.shown=visible;root.classList.toggle(tint.className,visible);changed=true;
     });
+    if(changed)syncThemeColor();
+  }
+  function syncThemeColor(){
+    // One style read per state or mode change, never per frame.
+    const color=getComputedStyle(document.body).backgroundColor;
+    if(themeColor.content!==color)themeColor.content=color;
   }
   function updateScroll() {
     const y=scrollY,vh=innerHeight;if(!geometry.size)return;
@@ -2913,7 +2938,8 @@
     opacity(shadow,shadeAge>=0&&shadeAge<10?.05*Math.sin(shadeAge/10*Math.PI):0);
     if(shadeAge>=0&&shadeAge<10)transform(shadow,`translateX(${shadeAge/10*200}vw)`);
     if(time>=nextHunt){
-      const eligible=huntTargets.filter(el=>{const g=geometry.get(el);return g&&g.top<scrollY+innerHeight&&g.top+g.height>scrollY;});
+      // Touch devices skip the letter hunts for the same reason as the still hero letters.
+      const eligible=coarse.matches?[]:huntTargets.filter(el=>{const g=geometry.get(el);return g&&g.top<scrollY+innerHeight&&g.top+g.height>scrollY;});
       const el=eligible[Math.floor(Math.random()*eligible.length)];if(el){const chars=el.querySelectorAll('.hero-letter,.focus-character');hunt(chars[Math.floor(Math.random()*chars.length)]);}nextHunt=time+randomBetween(5,9);
     }
     if(time>=nextLink){const eligible=lamps.filter(l=>l.el.matches('.links a')&&l.visible);if(eligible.length)eligible[Math.floor(Math.random()*eligible.length)].idleUntil=time+.9;nextLink=time+randomBetween(7,12);}

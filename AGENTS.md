@@ -29,7 +29,7 @@
 ## 公開の前の確認
 1. 手元で表示する：`python tools/serve.py 4173 .`（同時に複数のブラウザで確かめても断られないサーバー。`python -m http.server` は同時接続に弱く、画像が欠けた偽の不具合が出る）。`file://` では開かない。
 2. `python tools/check-paths.py`：参照しているファイルが、大文字と小文字まで一致して存在するか（GitHub Pages は区別する）。
-3. 画像を足したり変えたりしたら、`main.js` の `IMAGE_VERSION` を上げて `node tools/version-images.mjs`。
+3. 毎回 `node tools/version-images.mjs` を実行する。画像の URL の版の印と、`index.html` が読む `style.css`・`main.js` の版の印（中身から作る）をそろえる。画像を足したり変えたりしたときは、先に `main.js` の `IMAGE_VERSION` を上げる。`--check` で確かめられる（CSS や JS だけを変えたときも、版の印が古いと失敗する）。
 4. `BASE=http://127.0.0.1:4173/ node tools/smoke.mjs`：昼と夜、デスクトップとスマホで、通信の失敗とページのエラーがないこと（Playwright が要る）。
 5. 読み込みの重さ：`BASE=http://127.0.0.1:4173/ W=390 H=844 DPR=3 MBPS=9 node tools/load-weight.mjs`（スマホの 4G 相当）。目標は、最大の画像（LCP）2.5秒以内、load までの通信 2.5MB 以下。状態ごとに最初に読む画像の一覧は `node tools/loading-inventory.mjs`。
 6. 目で見る：昼と夜、デスクトップとスマホの幅で、変えた所と、トップ、最後の場面。できれば iPhone の実機でも。
@@ -37,9 +37,10 @@
 
 ## 壊しやすい所
 - 毎フレームの処理で、位置を読む（`getBoundingClientRect` など）と、画面全体がひきつる。位置は `refreshGeometry` で読んで、キャッシュを使う。
-- 本文全体に効く CSS の規則を、ページの根の印で切り替えると、遅い端末で固まる。
+- 本文全体に効く CSS の規則を、ページの根の印で切り替えると、遅い端末で固まる。根の CSS 変数を切り替えるのも同じ（変数は子に引き継がれ、ページ全体を計算し直す。2026-10-12 に、場面の境目を通るたびに 0.2秒かかった）。
 - 画面全体を覆う `position: fixed` の要素を、画面の上端と下端に接して置くと、iPhone の Safari の上下の帯が白くなる。
-- `body` の背景色は、iPhone の Safari の上下の帯と、ページの外の余白の色になる（トップと最後の場面で空の色に切り替わる）。ページの紙の色は `main` が持つ。`body` に色や画像を足さない。
+- `html` と `body` の背景色、`theme-color` は、iPhone の Safari の上下の帯と、ページの外の余白の色になる。`main.js` の `syncChromeTints` が、トップと最後の場面で空の色に切り替える。ページの紙の色は `main` が持つ。`html`・`body` に色や画像を足さない。
+- 指で操作する端末（`(pointer: coarse)`）では、ヒーローの文字を1字ずつ動かさない。動く文字は1字ずつ描画の層になり、夜への切り替えで一斉に描き直されたとき、iPhone の Safari が層の端にマゼンタの線を出した（描き終わっていない層の仮の色）。小さな要素をたくさん同時に `will-change` にしない。
 - ぼかしのフィルタ（`filter: blur()`、SVG のぼかし）を、動く要素や大きな要素に付けると、iPhone の Safari に紫の線が出る。グラデーションか `text-shadow` で作る。
 - `text-shadow` の付いたリンクは、透明な下線にも影が付き、文字の下に黒いにじみが出る。そういうリンクは、普段は下線を `none` にする。
 - 文字を1字ずつ分ける演出は、読み上げ、コピー、ページ内検索のための重ねとセットで動いている。片方だけを変えない。

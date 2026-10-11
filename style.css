@@ -12,14 +12,16 @@
   
 }
 * { box-sizing:border-box; }
-html { background:var(--closing-edge); color-scheme:light; font-synthesis:none; line-break:strict; scrollbar-color:var(--line) var(--paper); }
+html { background:var(--paper); color-scheme:light; font-synthesis:none; line-break:strict; scrollbar-color:var(--line) var(--paper); }
 html,body { overflow-x:clip; }
 body { margin:0; background:var(--paper); color:var(--ink); font:400 16px/1.9 var(--f-body); letter-spacing:.02em; -webkit-font-smoothing:antialiased; }
 main { position:relative; isolation:isolate; overflow:clip; background-color:var(--paper); }
-/* iOS Safari paints overscroll and the space behind its toolbars with body's background-color.
-   main carries the paper, so body can follow the scene at either end of the page. */
-body.chrome-top { background-color:var(--opening-edge); }
-body.chrome-bottom { background-color:var(--closing-edge); }
+/* iOS Safari paints its bars and the space past the page from the page background (body, html or
+   theme-color, depending on the version). main carries the paper; html, body and theme-color take
+   the scene's edge color while the top or the closing scene covers that edge (syncChromeTints).
+   Only html and body restyle: an inherited custom property here recalculated the whole page. */
+html.chrome-top,html.chrome-top body { background-color:var(--opening-edge); }
+html.chrome-bottom,html.chrome-bottom body { background-color:var(--closing-edge); }
 ::selection { background:var(--sky-2); color:var(--ultra-deep); }
 h1,h2,h3,p,dl,dd,ol,ul { margin:0; }
 ol,ul { padding:0; list-style:none; }
@@ -146,7 +148,8 @@ code { font:inherit; font-size:.9em; background:var(--code-bg, rgba(31,43,58,.07
 .menu-social svg { width:22px; height:22px; fill:currentColor; }
 .opening { --hero-name-size:clamp(48px,min(6.6vw,10.6svh),180px); position:relative; height:100svh; overflow:clip; isolation:isolate; background-color:var(--opening-edge); background-image:linear-gradient(to bottom,transparent 92%,var(--paper) 92%); }
 @media (max-aspect-ratio:4/5), (max-width:720px) and (orientation:portrait) {
-  html:not([data-mode="night"]) :is(.opening,body.chrome-top) { --opening-edge:rgb(116,159,206); }
+  html:not([data-mode="night"]) .opening { --opening-edge:rgb(116,159,206); }
+  html.chrome-top:not([data-mode="night"]),html.chrome-top:not([data-mode="night"]) body { background-color:rgb(116,159,206); }
 }
 /* The lower 8% of .opening keeps paper beneath the existing photo feather. */
 .hero-photo { position:absolute; inset:0; overflow:hidden; mask-image:linear-gradient(to bottom,#000 92%,transparent); }
