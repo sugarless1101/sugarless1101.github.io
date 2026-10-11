@@ -1,0 +1,26 @@
+// Load weight on a phone-like device with network throttling: bytes per phase, top files, paint timings.
+import { chromium } from 'playwright';
+const BASE = process.env.BASE || 'https://sugarless1101.github.io/';
+const MBPS = +(process.env.MBPS || 9), RTT = +(process.env.RTT || 100), MODE = process.env.MODE || 'day';
+const b = await chromium.launch({ channel: 'msedge', headless: true });
+const W = +(process.env.W || 390), H = +(process.env.H || 844), DPR = +(process.env.DPR || 3);
+const ctx = await b.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: DPR, isMobile: W < 768, hasTouch: W < 768 });
+if (MODE === 'night') await ctx.addInitScript(() => { try { sessionStorage.setItem('portfolio-mode', 'night'); } catch {} });
+const p = await ctx.newPage(); const cdp = await ctx.newCDPSession(p);
+await cdp.send('Network.enable'); await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: RTT, downloadThroughput: MBPS * 1e6 / 8, uploadThroughput: 2e6 / 8 });
+const files = new Map(); const t0 = Date.now();
+cdp.on('Network.loadingFinished', e => { const f = files.get(e.requestId); if (f) { f.bytes = e.encodedDataLength; f.end = Date.now() - t0; } });
+cdp.on('Network.requestWillBeSent', e => files.set(e.requestId, { url: e.request.url, start: Date.now() - t0, bytes: 0 }));
+await p.addInitScript(() => { window.__lcp = 0; new PerformanceObserver(l => { const e = l.getEntries().at(-1); window.__lcp = e.startTime; window.__lcpEl = e.element?.tagName + '.' + (e.element?.className || ''); }).observe({ type: 'largest-contentful-paint', buffered: true }); });
+await p.goto(BASE, { waitUntil: 'load', timeout: 120000 }); const loadAt = Date.now() - t0;
+const fcp = await p.evaluate(() => performance.getEntriesByName('first-contentful-paint')[0]?.startTime || 0);
+await p.waitForTimeout(12000);
+const lcp = await p.evaluate(() => [Math.round(window.__lcp), window.__lcpEl]);
+const all = [...files.values()].filter(f => f.bytes);
+const sum = (arr) => Math.round(arr.reduce((s, f) => s + f.bytes, 0) / 1024);
+const byLoad = all.filter(f => f.end <= loadAt), after = all.filter(f => f.end > loadAt);
+const short = u => u.replace(BASE, '').replace(/\?v=\w+/, '').slice(0, 60);
+console.log(JSON.stringify({ base: BASE, mode: MODE, mbps: MBPS, rtt: RTT, fcpMs: Math.round(fcp), lcp, loadEventMs: loadAt, requests: all.length, kbUntilLoad: sum(byLoad), kbAfterLoad12s: sum(after), kbTotal: sum(all) }));
+console.log('top files:'); all.sort((a, b) => b.bytes - a.bytes).slice(0, 25).forEach(f => console.log(String(Math.round(f.bytes / 1024)).padStart(6) + ' KB  end ' + String(f.end).padStart(6) + 'ms  ' + short(f.url)));
+await b.close();
