@@ -38,8 +38,14 @@
   });
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const fine = matchMedia('(hover: hover) and (pointer: fine)');
+  const coarse = matchMedia('(pointer: coarse)');
   const portrait = matchMedia('(max-aspect-ratio: 4/5), (max-width: 720px) and (orientation: portrait)');
   const hero = document.querySelector('#top'), closing = document.querySelector('.closing');
+  // body's background-color colors Safari's overscroll and toolbar areas (see style.css).
+  const chromeTints=[
+    {className:'chrome-top',owner:hero,bottom:false,shown:false},
+    {className:'chrome-bottom',owner:closing,bottom:true,shown:false}
+  ];
   const sectionIds = ['profile', 'projects', 'talks', 'timeline', 'links'];
   const sections = sectionIds.map(id => document.getElementById(id));
   const guide = document.querySelector('.section-guide'), guideLinks = [...guide.querySelectorAll('a')];
@@ -1675,9 +1681,9 @@
     wireFixture.style.cssText=`left:${-band.getBoundingClientRect().left-16}px;right:auto;top:0;width:${innerWidth+32}px;height:${height}px;aspect-ratio:auto`;
     wireWidth=innerWidth+32;wireHeight=height;
     wireSvg.setAttribute('viewBox',`0 0 ${wireWidth} ${wireHeight}`);
-    wireSvg.style.setProperty('--wire-font-size','14px');wireSvg.style.setProperty('--wire-glow-blur','1px');
+    wireSvg.style.setProperty('--wire-font-size','14px');
     wireSvg.querySelectorAll('text').forEach(el=>el.setAttribute('dy','-7'));
-    wireCurrent.setAttribute('r','2');
+    wireCurrent.setAttribute('r','4');
     // Hidden full/compact labels cannot be measured reliably. Plain SVG probes
     // inherit the same typography and never change the displayed mode to measure.
     const probes=document.createElementNS(svgNS,'g');probes.style.visibility='hidden';
@@ -2293,10 +2299,24 @@
       visible?inView.add(owner):inView.delete(owner);owner.classList.toggle('in-view',visible);
     }
   }
+  function syncChromeTints(){
+    const y=scrollY,vh=innerHeight;
+    chromeTints.forEach(tint=>{
+      const box=geometry.get(tint.owner);if(!box)return;
+      // Clamp rubber-band overscroll and Safari's extra bottom-bar space to
+      // the document edges. Geometry is read only during refreshGeometry.
+      const edge=tint.bottom?Math.min(y+vh,box.top+box.height):Math.max(0,y);
+      // The closing scene includes its lower edge (the document's end).
+      const visible=box.top<=edge&&(tint.bottom?edge<=box.top+box.height:edge<box.top+box.height);
+      if(visible===tint.shown)return;
+      tint.shown=visible;document.body.classList.toggle(tint.className,visible);
+    });
+  }
   function updateScroll() {
     const y=scrollY,vh=innerHeight;if(!geometry.size)return;
     if(![hero,closing,...sections].every(node=>geometry.has(node)))return;
     const hb=geometry.get(hero);root.classList.toggle('hero-out',y>=hb.height*.72);
+    syncChromeTints();
     syncSceneDormancy();
     const closingBox=geometry.get(closing),closingSun=sunScenes.find(scene=>scene.owner===closing);
     syncFinalVisibility();
@@ -2324,8 +2344,12 @@
   }
   function focusPull(el,owner,duration=durations.focus,delay=0,travel=8){
     if(reduced.matches)return;
-    // The defocused exposure is painted once. Only its opacity and displacement
-    // change; the browser never has to re-rasterize an animated blur radius.
+    const phases=[0,.25,.5,.75,1];
+    const clear=phases.map(p=>({offset:p,opacity:p*p,transform:`translateY(${travel*(1-p)}px)`}));
+    trackAnimation(el,clear,{duration,delay,easing:easeOut,fill:'backwards'},owner);
+    // The defocused exposure is painted once; only its opacity and displacement
+    // change. Touch devices skip it: Safari draws colored seams on filtered layers.
+    if(coarse.matches)return;
     const box=el.getBoundingClientRect(),parent=el.offsetParent||el.parentElement,parentBox=parent.getBoundingClientRect();
     const ghost=el.cloneNode(true);ghost.classList.add('focus-ghost');ghost.setAttribute('aria-hidden','true');ghost.inert=true;
     ghost.querySelectorAll('.lamp-switch').forEach(button=>button.remove());
@@ -2339,10 +2363,7 @@
     const type=getComputedStyle(el);
     for(const property of ['font','letterSpacing','lineHeight','color','writingMode','textOrientation','textAlign','textShadow','whiteSpace'])ghost.style[property]=type[property];
     parent.append(ghost);
-    const phases=[0,.25,.5,.75,1];
-    const clear=phases.map(p=>({offset:p,opacity:p*p,transform:`translateY(${travel*(1-p)}px)`}));
     const blurred=phases.map(p=>({offset:p,opacity:p*(1-p),transform:`translateY(${travel*(1-p)}px)`}));
-    const clearAnimation=trackAnimation(el,clear,{duration,delay,easing:easeOut,fill:'backwards'},owner);
     const animation=trackAnimation(ghost,blurred,{duration,delay,easing:easeOut,fill:'both'},owner);
     animation.finished.then(()=>ghost.remove(),()=>ghost.remove());
   }
@@ -2440,8 +2461,8 @@
         position.style.left=position.style.top='0px';air.append(position);svg.append(air);windPieces.push(air);
       }else svg.append(position);
       trailAnimations.push(trackAnimation(development,[{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:draw/36,delay:draw*i/36,easing:'linear',fill:'both'},owner.node));
-      [.15,.8,2].forEach((blur,index)=>{
-        const segment=document.createElement('span');segment.className='trail-ink';segment.style.filter=`blur(${blur}px)`;
+      [0,1,2].forEach(index=>{
+        const segment=document.createElement('span');segment.className='trail-ink';
         development.append(segment);
         const weights=[[.35,0,0,0],[0,.24,.06,0],[0,0,.06,0]][index];
         trailAnimations.push(trackAnimation(segment,[{opacity:weights[0],transform:'scaleY(1)',offset:0},{opacity:weights[1],transform:'scaleY(4)',offset:.4},{opacity:weights[2],transform:'scaleY(5)',offset:.7},{opacity:weights[3],transform:'scaleY(6)',offset:1}],{duration:diffuse,delay:draw*(i+1)/36,easing:'linear',fill:'both'},owner.node));
@@ -3169,7 +3190,7 @@
   if(reduced.matches)applyReducedMotion();
   addEventListener('pointermove',e=>{if(fine.matches)pointer={x:(e.clientX/innerWidth-.5)*2,y:(e.clientY/innerHeight-.5)*2};},{passive:true});
   addEventListener('blur',()=>pointer={x:0,y:0});
-  addEventListener('scroll',()=>{syncSceneDormancy();if(layoutFrame!==null)return;layoutFrame=requestAnimationFrame(()=>{layoutFrame=null;updateScroll();});},{passive:true});
+  addEventListener('scroll',()=>{syncSceneDormancy();syncChromeTints();if(layoutFrame!==null)return;layoutFrame=requestAnimationFrame(()=>{layoutFrame=null;updateScroll();});},{passive:true});
   addEventListener('resize',queueGeometry);addEventListener('pageshow',queueGeometry);addEventListener('hashchange',updateScroll);portrait.addEventListener('change',queueGeometry);
   document.fonts?.ready.then(queueGeometry);
   document.fonts?.addEventListener('loadingdone',queueGeometry);

@@ -47,6 +47,7 @@
 | `spawnFirework`、`drawFirework`、`paintFireworks`、`clearFinalEffects` | 夜の最後の場面の花火。文字・空の領域を避けて出し、画面外や昼夜切り替えで後始末する。 |
 | `refreshGeometry`、`geometry`、`queueGeometry`、`layoutBox` | 位置の一度読みのキャッシュ。画像・文字・電線・画面の位置を測り、毎フレームの計算に渡す。リサイズ・フォント読み込み・絞り込みなどの後に再測定する。 |
 | `observer`、`renderObserver`、`inView`、`syncSceneDormancy`、`visibleAnimation` | 画面内外を管理する。画面外の所有者の演出を休止し、再表示時に使える土台を残す。 |
+| `chromeTints`、`syncChromeTints` | iPhone の Safari の上下の帯と、ページの外の色。トップや最後の場面が画面の端を覆う間、`body` に `chrome-top` / `chrome-bottom` を付け、`body` の背景色を空の色にする（紙の色は `main` が持つ）。判断はスクロールのたびに `geometry` のキャッシュで行い、変わったときだけ書き換える。 |
 | `spawnContrail`、`paintWindowTrails`、`paintContrailGlints` | 空や窓の飛行機雲と、その光。文字との間隔を測定済みの領域から計算する。 |
 | `spawnFlock`、`paintFlocks` | 空を飛ぶ鳥の群れ。近くの鳥・空の範囲・風を使って進む。 |
 | `planePhysicsParameters`、`createPlaneGlider`、`projectPlaneGlider`、`stepPlaneGlider`、`spawnPaperPlane`、`paintPaperPlanes` | 紙飛行機の滑空。速度・姿勢・揚力・抗力・投影を計算し、風や旋回を加える。`checkPlaneCollision`、`strikePlane`、`paintFallingPlane` が電線や鳥との衝突と落下を扱う。 |
@@ -64,6 +65,7 @@
 - DOM の動きは `transform` と `opacity` を使う。電線 SVG や星・花火の canvas は既存の専用描画経路を使い、レイアウトを変える動きを追加しない。画像の読み込みや姿勢の準備は描画ループの外で行う。
 - 画面外では休む。`inView` と所有者を使い、非表示のタブや開いているメニューにも対応する。土台の空・雲・電灯などの画像を休止のために隠さない。
 - `prefers-reduced-motion` を尊重する。新しい演出にも停止と安定表示、切り替え時の後始末を用意する。
+- ぼかしを `filter: blur()` や SVG のぼかしで作らない。iPhone の Safari が、ぼかしの層に色の付いた線を描いた。飛行機雲の墨は、ぼかした線の形をあらかじめ描いたグラデーションで、`scaleY` で広げても以前のぼかしと同じ見え方になる。小さな光は `radial-gradient`、文字のぼけは `text-shadow`。
 - 明滅は1秒に3回以下にする。信号、電灯、モールスなどを変更するときは同時に出る光も確認する。
 - 分割文字だけを残さない。読み上げ名、コピー、検索のための元の文字列と、その位置合わせを保つ。
 - ポインタとフォーカスの両方を維持する。生成された目次のリンクも、光の粒と電灯の既存の登録処理を通す。
