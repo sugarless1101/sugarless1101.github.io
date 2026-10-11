@@ -3263,8 +3263,7 @@
   document.addEventListener('visibilitychange',()=>{syncFinalVisibility();syncMotion();});
   addEventListener('scrollend',()=>{pedState.returning=false;paintPedestrian(0);});
   const springSnapshot=spring=>Object.freeze({x:spring.x,velocity:spring.v,f:spring.f,zeta:spring.zeta,limit:spring.limit});
-  const developerLetter='電灯のあるページへようこそ。手がかりは base64 にあります。\nZmxhZ3tsaWdodF9pbl90aGVfc2t5fQ==';
-  console.info(['   +---+','   | * |','   +-+-+','     |','     |',developerLetter].join('\n'));
+  console.info(['   +---+','   | * |','   +-+-+','     |','     |','電灯のあるページへようこそ。'].join('\n'));
   Object.defineProperty(window,'__motionDebug',{value:Object.freeze({
     get sceneDormancy(){return {top:hero.classList.contains('top-dormant'),finale:closing.classList.contains('finale-dormant'),wakeScreens:1.5,sleepScreens:2};},
     get menu(){return {open:menuOpen,running:frame!==null,time};},
