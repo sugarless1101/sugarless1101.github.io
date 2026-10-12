@@ -134,6 +134,10 @@ JavaScript が作る画像 URL には `?v=${IMAGE_VERSION}` を付けます。�
 
 `style.css` や `main.js` だけを変えたときも、`node tools/version-images.mjs` を実行してください。版の印が古いままだと、ブラウザが前の CSS や JS を使い続けることがあります（GitHub Pages は 10 分キャッシュされます）。`--check` は、版の印が古いと失敗します。
 
+## 書体
+
+書体の指定は `fonts.css` にあります（Google Fonts の CSS を保存したもの）。書体や太さを足すときは、`tools/fetch-fonts-css.mjs` の `families` を変えて `node tools/fetch-fonts-css.mjs` を実行し、`node tools/version-images.mjs` で版の印を更新します。Google Fonts の CSS を `index.html` から直接読む形には戻さないでください（その接続が詰まると、ページが真っ白のまま止まります）。
+
 ## 更新後の確認
 
 ルートで `python tools/check-paths.py` と `node tools/version-images.mjs --check` を実行します。参照ファイルの不足・大文字小文字の違い・版の不一致を直してください。`check-paths.py` は通信せず、JavaScript の既知の画像の組み立ても展開して調べます。画像の組み立て方を変えて「Unsupported image expression」が出た場合は、検査を飛ばさずツールにも新しい規則を追加します。外部リンクの有効性は別途確認します。

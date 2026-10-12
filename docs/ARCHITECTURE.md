@@ -13,6 +13,7 @@
 | `images/layers/` | 上部の空・雲・電灯と、最後の電灯。縦横、昼夜、解像度、消灯、光、マスクの派生画像。上部の電灯・光・ガラスのマスクは、表示する範囲だけを切り抜いた配信用（元は `images/masters/`）。 |
 | `images/cumulonimbus/` | 最後の積乱雲の base/body/top/wisps。昼夜と解像度違い。 |
 | `images/fixtures/` | 電柱・車両用信号などの器具。電柱と信号は、最大の表示サイズの3倍密度に合わせて縮めた配信用（元は `images/masters/`）。 |
+| `fonts.css` | 書体の `@font-face`（Google Fonts の CSS を保存したもの）。`node tools/fetch-fonts-css.mjs` で作り直す。手で編集しない。書体のファイルは fonts.gstatic.com から `font-display: swap` で読む。 |
 | `images/masters/` | 配信用の電灯・電柱・信号を作る元の画像（全画面の大きさ）。ページからは読まない。`python tools/build-fixture-images.py` で配信用を作り直す。 |
 | `images/fixtures/wire-parts/` | 電線に付く金具の昼夜画像。 |
 | `images/fixtures/birds/` | スズメの止まり姿勢、離陸、羽ばたきの画像。 |
