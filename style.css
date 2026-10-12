@@ -188,7 +188,7 @@ html[data-mode="night"] .nightmode-toggle { text-decoration-color:var(--ultra); 
 .scroll-dot { position:absolute; top:0; left:-2.5px; width:6px; height:6px; border-radius:50%; background:currentColor; animation:flow-scroll 2.6s linear infinite; }
 .lantern-light { position:absolute; inset:0; z-index:4; pointer-events:none; }
 .lantern-glass,.lantern-glow { position:absolute; display:block; background:var(--lamp-white); }
-.lantern-glass { left:var(--img-x); top:var(--img-y); width:var(--img-width); height:var(--img-height); mask-image:image-set(url("images/layers/lamp-glass-mask-wide.webp?v=24") 1x,url("images/layers/lamp-glass-mask-wide-2x.webp?v=24") 2x); mask-size:100% 100%; mask-repeat:no-repeat; opacity:.30; }
+.lantern-glass { left:var(--img-x); top:var(--img-y); width:var(--img-width); height:var(--img-height); mask-image:image-set(url("images/layers/lamp-glass-mask-wide.webp?v=25") 1x,url("images/layers/lamp-glass-mask-wide-2x.webp?v=25") 2x); mask-size:100% 100%; mask-repeat:no-repeat; opacity:.30; }
 .lantern-glow { translate:-50% -50%; border-radius:50%; background:radial-gradient(ellipse closest-side,rgba(234,251,255,.7),rgba(234,251,255,.35) 35%,transparent 100%); opacity:.12; }
 .hero-contrails { position:absolute; inset:0; z-index:2; pointer-events:none; }
 .sky-trail { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; color:var(--lamp-white); }
@@ -334,7 +334,7 @@ html[data-mode="night"] .nightmode-toggle { text-decoration-color:var(--ultra); 
   .hero-name { gap:.12em; }
   .hero-sub { writing-mode:vertical-rl; text-orientation:sideways; white-space:nowrap; margin:0; font-size:max(15px,calc(var(--hero-name-size) * .26)); letter-spacing:.14em; }
   .hero-moon { left:14%; top:17%; width:13vw; min-width:44px; }
-  .lantern-glass { mask-image:image-set(url("images/layers/lamp-glass-mask-tall.webp?v=24") 1x,url("images/layers/lamp-glass-mask-tall-2x.webp?v=24") 2x); }
+  .lantern-glass { mask-image:image-set(url("images/layers/lamp-glass-mask-tall.webp?v=25") 1x,url("images/layers/lamp-glass-mask-tall-2x.webp?v=25") 2x); }
 }
 @media (max-height:620px) and (orientation:landscape) {
   .hero-caption { top:32%; }

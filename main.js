@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const IMAGE_VERSION = '24'; // node tools/version-images.mjs syncs HTML/CSS.
+  const IMAGE_VERSION = '25'; // node tools/version-images.mjs syncs HTML/CSS.
   const root = document.documentElement;
   // Build content-dependent UI before text splitting and interaction registration.
   function buildWorkNavigation() {
@@ -68,7 +68,7 @@
         if(night&&width<=2560)return `images/sky-night-2560.webp?v=${IMAGE_VERSION}`;
         if(width>2560)return night?`images/sky-night-5120.webp?v=${IMAGE_VERSION}`:`images/sky-summer-5120.webp?v=${IMAGE_VERSION}`;
       }
-      const cloud=node.closest('.hero-clouds,.window-cloud');
+      const cloud=node.closest('.hero-clouds,.window-cloud,.finale-low-clouds');
       if(cloud){
         const width=Number(cloud.dataset.assetWidth)||heroCloudPixels;
         if(width<=3600)return node.dataset.background.replace('.webp',width<=2400?'-2400.webp':'-3600.webp');
@@ -484,6 +484,7 @@
     window.style.setProperty('--crop',["30% 12%","65% 34%","45% 60%","75% 80%"][i]);
     window.querySelectorAll('.window-cloud').forEach((cloud,j)=>{
       cloud.dataset.background=`images/layers/clouds-${j?'near':'far'}.webp?v=${IMAGE_VERSION}`;
+      cloud.dataset.assetWidth='2400'; // window tiles stay under 160px: the smallest cloud file is plenty
       cloud.style.setProperty('--window-period',`${(j?24:43)+i*7}s`);
       cloud.style.setProperty('--window-phase',`${-i*8-j*5}s`);
       cloud.style.bottom=`${j?[-5,3,-1,7][i]:[16,24,12,20][i]}%`;
@@ -575,7 +576,7 @@
   finaleSky.dataset.background=`images/sky-summer.webp?v=${IMAGE_VERSION}`;
   pairBackground(finaleSky,`images/sky-night.webp?v=${IMAGE_VERSION}`);
   const lowClouds=document.querySelector('.finale-low-clouds');
-  lowClouds.dataset.background=`images/layers/clouds-far-summer.webp?v=${IMAGE_VERSION}`;
+  lowClouds.dataset.background=`images/layers/clouds-far.webp?v=${IMAGE_VERSION}`; // same picture as clouds-far-summer, with sized files
   pairBackground(lowClouds,`images/layers/clouds-far-night.webp?v=${IMAGE_VERSION}`);
   document.querySelectorAll('.sky-window').forEach(node=>{
     const image=node.querySelector('.window-sky');image.classList.add('mode-day');
@@ -2199,14 +2200,18 @@
     sky.querySelectorAll('img').forEach(img=>img.style.cssText=`position:absolute;left:${ox}px;top:${oy}px;width:${c.w*cover}px;height:${c.h*cover}px`);
     const lampPhoto=photos.find(p=>p.node===lamp),lb=tall?{x:363,y:800,w:284,h:1333}:{x:631,y:144,w:258,h:1206};
     lampPhoto.surface.style.cssText=`left:${lb.x*cover}px;top:${lb.y*cover}px;width:${lb.w*cover}px;height:${lb.h*cover}px;`;
-    lampPhoto.surface.querySelectorAll('img').forEach(img=>img.style.cssText=`position:absolute;left:${-lb.x*cover}px;top:${-lb.y*cover}px;width:${c.w*cover}px;height:${c.h*cover}px`);
+    // The served lamp, glow and glass-mask files are cropped to lb, dg and gb plus a 4 frame-px margin
+    // (tools/build-fixture-images.py). The margin keeps each image past its clip box after pixel snapping;
+    // an exact fit left a dark row along the glass mask's lower edge.
+    const pad=4;
+    lampPhoto.surface.querySelectorAll('img').forEach(img=>img.style.cssText=`position:absolute;left:${-pad*cover}px;top:${-pad*cover}px;width:${(lb.w+2*pad)*cover}px;height:${(lb.h+2*pad)*cover}px`);
     const dg=tall?{x:446,y:1000,w:194,h:202}:{x:706,y:326,w:174,h:182};
     dayGlow.style.cssText=`left:${(dg.x-lb.x)*cover}px;top:${(dg.y-lb.y)*cover}px;width:${dg.w*cover}px;height:${dg.h*cover}px`;
     const dayGlowImage=dayGlow.querySelector('img'),variant=tall?'tall':'wide';
     dayGlowImage.dataset.src=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION}`;
     dayGlowImage.dataset.srcset=`images/layers/lamp-${variant}-glow.webp?v=${IMAGE_VERSION} 1x, images/layers/lamp-${variant}-2x-glow.webp?v=${IMAGE_VERSION} 2x`;
     if(sceneAssetsStarted)refreshAsset(dayGlowImage);
-    dayGlowImage.style.cssText=`left:${-dg.x*cover}px;top:${-dg.y*cover}px;width:${c.w*cover}px;height:${c.h*cover}px`;
+    dayGlowImage.style.cssText=`left:${-pad*cover}px;top:${-pad*cover}px;width:${(dg.w+2*pad)*cover}px;height:${(dg.h+2*pad)*cover}px`;
     bloom.style.left=`${x}px`;bloom.style.top=`${y}px`;bloom.style.width=bloom.style.height=`${Math.min(220,unit*62*.6)}px`;
     // Alpha-weighted glass centres and support widths measured from the masks.
     const glassSource=tall?{x:539.7552,y:1094.8262,w:193}:{x:790.8733,y:411.2604,w:176};
@@ -2215,8 +2220,8 @@
     const gb=tall?{x:448,y:1002,w:181,h:195}:{x:708,y:327,w:163,h:176};
     glass.style.left=`${ox+gb.x*cover}px`;glass.style.top=`${oy+gb.y*cover}px`;
     glass.style.width=`${gb.w*cover}px`;glass.style.height=`${gb.h*cover}px`;
-    glass.style.maskSize=`${c.w*cover}px ${c.h*cover}px`;
-    glass.style.maskPosition=`${-gb.x*cover}px ${-gb.y*cover}px`;
+    glass.style.maskSize=`${(gb.w+2*pad)*cover}px ${(gb.h+2*pad)*cover}px`;
+    glass.style.maskPosition=`${-pad*cover}px ${-pad*cover}px`;
     // Alpha>32 hull of the existing mask; columns and arms are outside it.
     const hit=tall?{x:448,y:1002,w:181,h:195,points:[[452,1012],[567,1004],[571,1004],[628,1039],[625,1171],[615,1192],[483,1196],[452,1174],[450,1147]]}:
       {x:708,y:327,w:163,h:176,points:[[712,336],[815,329],[819,329],[870,360],[868,480],[857,498],[741,502],[712,484],[710,436]]};
@@ -2255,6 +2260,7 @@
     });
     const low=document.querySelector('.finale-low-clouds');
     low.style.setProperty('--low-tile',`${low.clientHeight*4800/900}px`);
+    low.dataset.assetWidth=String(Math.ceil(low.clientHeight*4800/900*(devicePixelRatio||1)));
     fitFlows();
     const rect=layoutBox(hero.querySelector('.hero-caption'));
     heroGeometry={w,h,exclusions:[{left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom},{left:x-unit*34,right:x+unit*34,top:y-unit*39,bottom:y+unit*39}]};

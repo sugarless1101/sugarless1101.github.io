@@ -10,9 +10,10 @@
 | `style.css` | 色・フォント・余白のトークン、レイアウト、文字と器具の表示、昼夜、画面幅と動きを減らす設定の規則。 |
 | `main.js` | 即時実行関数内で DOM を組み立て、位置を測定し、操作と演出を動かす。外部ライブラリへの依存はない。 |
 | `images/` 直下 | 空の背景画像や月など、共通の画像。 |
-| `images/layers/` | 上部の空・雲・電灯と、最後の電灯。縦横、昼夜、解像度、消灯、光、マスクの派生画像。 |
+| `images/layers/` | 上部の空・雲・電灯と、最後の電灯。縦横、昼夜、解像度、消灯、光、マスクの派生画像。上部の電灯・光・ガラスのマスクは、表示する範囲だけを切り抜いた配信用（元は `images/masters/`）。 |
 | `images/cumulonimbus/` | 最後の積乱雲の base/body/top/wisps。昼夜と解像度違い。 |
-| `images/fixtures/` | 電柱・車両用信号などの器具。 |
+| `images/fixtures/` | 電柱・車両用信号などの器具。電柱と信号は、最大の表示サイズの3倍密度に合わせて縮めた配信用（元は `images/masters/`）。 |
+| `images/masters/` | 配信用の電灯・電柱・信号を作る元の画像（全画面の大きさ）。ページからは読まない。`python tools/build-fixture-images.py` で配信用を作り直す。 |
 | `images/fixtures/wire-parts/` | 電線に付く金具の昼夜画像。 |
 | `images/fixtures/birds/` | スズメの止まり姿勢、離陸、羽ばたきの画像。 |
 | `images/fixtures/paper-plane/` | 紙飛行機の左右のロール姿勢。 |
