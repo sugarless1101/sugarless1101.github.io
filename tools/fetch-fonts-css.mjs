@@ -10,7 +10,8 @@ const families = [
   'family=EB+Garamond:ital,wght@0,400;0,500;1,400',
   'family=Josefin+Sans:wght@200;300;400',
   'family=Shippori+Mincho:wght@600',
-  'family=Zen+Kaku+Gothic+New:wght@400;500;700',
+  // Body text uses only 400; the 500 and 700 faces doubled this render-blocking file unused.
+  'family=Zen+Kaku+Gothic+New:wght@400',
   'display=swap',
 ].join('&');
 // Google answers each browser differently. Chrome on Windows receives woff2 for every face (a macOS

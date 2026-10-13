@@ -18,12 +18,42 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#749FCE">
 <script>try{document.documentElement.dataset.mode=sessionStorage.getItem('portfolio-mode')==='night'?'night':'day';}catch{document.documentElement.dataset.mode='day';}</script>
+<script>
+/* Load log for #diag. When a load is slow or never finishes, this browser keeps a short note of what
+   had arrived (localStorage only; nothing is sent anywhere). Open the page with #diag to read it. */
+(function(){
+  var key='portfolio-load-log',start=Date.now();
+  function note(kind){
+    try{
+      var nav=performance.getEntriesByType('navigation')[0]||{},origin=location.origin+'/';
+      var done=performance.getEntriesByType('resource').map(function(e){return [e.name.replace(origin,'').split('?')[0].slice(0,70),Math.round(e.startTime),Math.round(e.responseEnd)];}).sort(function(a,b){return b[2]-a[2];});
+      var log=JSON.parse(localStorage.getItem(key)||'[]');
+      log.unshift({at:new Date().toString(),kind:kind,ready:document.readyState,fonts:document.fonts&&document.fonts.status,
+        html:[Math.round(nav.responseStart||0),Math.round(nav.responseEnd||0),Math.round(nav.domInteractive||0)],
+        arrived:done.length,latest:done.slice(0,10),waiting:window.__pendingAssets?window.__pendingAssets():'main.js not run',agent:navigator.userAgent});
+      localStorage.setItem(key,JSON.stringify(log.slice(0,6)));
+    }catch(e){}
+  }
+  setTimeout(function(){if(document.readyState!=='complete')note('not finished after 12s');},12000);
+  addEventListener('load',function(){var s=(Date.now()-start)/1000;if(s>6)note('load took '+s.toFixed(1)+'s');});
+  function show(){
+    if(location.hash!=='#diag'||!document.body)return;
+    var pre=document.createElement('pre'),log=[];
+    try{log=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){}
+    pre.style.cssText='position:fixed;inset:0;z-index:99;margin:0;padding:16px;overflow:auto;background:#fff;color:#111;font:12px/1.5 monospace;white-space:pre-wrap';
+    pre.textContent=log.length?'タップで閉じる\n'+JSON.stringify(log,null,1):'記録はありません（6秒以上かかった読み込みは、まだありません）。タップで閉じる';
+    pre.onclick=function(){pre.remove();};
+    document.body.append(pre);
+  }
+  addEventListener('DOMContentLoaded',show);addEventListener('hashchange',show);
+})();
+</script>
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="fonts.css?v=00edfa6bd9">
+<link rel="stylesheet" href="fonts.css?v=2e6129d1e8">
 <link rel="stylesheet" href="style.css?v=9427ae3e4e">
-<script src="main.js?v=d9c4dfdc1a" defer></script>
+<script src="main.js?v=16050ad699" defer></script>
 <noscript><style>
 img[data-src] { display:none; }
 .finale-sky { background-image:image-set(url("images/sky-summer.webp?v=25") 1x,url("images/sky-summer-5120.webp?v=25") 2x); }

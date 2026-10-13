@@ -113,6 +113,21 @@
     // After the 1.2s deadline, keep the old photograph until its mate decodes.
     return mate&&!exposureReady(mate)&&node.classList.contains(nightMode()?'mode-day':'mode-night')?1:value;
   }
+  // Safari's decode() can stay pending or reject although the file arrived. A loaded image counts as
+  // ready after 3s anyway, so a stuck promise never leaves a scene without its photograph.
+  const pendingAssets=new Set();
+  window.__pendingAssets=()=>[...pendingAssets].map(url=>url.split('?')[0]); // read by the #diag load log
+  function decoded(image){
+    return new Promise((resolve,reject)=>{
+      let settled=false;
+      const finish=ok=>{if(settled)return;settled=true;ok?resolve():reject(new Error('image failed'));};
+      const loaded=()=>image.complete&&image.naturalWidth>0;
+      image.decode().then(()=>finish(true),()=>finish(loaded()));
+      const fallback=()=>setTimeout(()=>{if(loaded())finish(true);},3000);
+      if(loaded())fallback();else image.addEventListener('load',fallback,{once:true});
+      image.addEventListener('error',()=>finish(false),{once:true});
+    });
+  }
   async function loadAsset(asset){
     const {node}=asset,url=selectedAsset(node);if(!url)return;
     if(asset.url===url&&asset.pending)return asset.pending;
@@ -121,12 +136,14 @@
       try{
         if(node.matches('img')){
           node.loading='eager';node.src=url;
-          await node.decode();
+          pendingAssets.add(url);
+          try{await decoded(node);}finally{pendingAssets.delete(url);}
         }else{
           if(!decodedBackgrounds.has(url)){
             if(!backgroundDecodes.has(url)){
               const image=new Image();image.decoding='async';image.src=url;
-              const ready=image.decode().then(()=>decodedBackgrounds.add(url)).catch(error=>{backgroundDecodes.delete(url);throw error;});
+              pendingAssets.add(url);
+              const ready=decoded(image).then(()=>decodedBackgrounds.add(url)).catch(error=>{backgroundDecodes.delete(url);throw error;}).finally(()=>pendingAssets.delete(url));
               backgroundDecodes.set(url,ready);
             }
             await backgroundDecodes.get(url);
@@ -937,6 +954,7 @@
       const period=isHero?tile/(heroSpeed*innerWidth/1920):isWindow?parseFloat(css.getPropertyValue('--window-period')):300;
       const nightPeriod=node.classList.contains('hero-clouds-haze')?2400:node.classList.contains('hero-clouds-near')?900:node.classList.contains('hero-clouds-mid')?1100:1400;
       const phase=isWindow?Math.abs(parseFloat(css.getPropertyValue('--window-phase'))||0):0;
+      if(!(tile>0)||!(width>0))return null; // an unlaid strip would make the tile loop below endless
       const key=[width,height,tile,period,dpr].join(':');if(flow.key===key)return null;
       const origin=node.getBoundingClientRect().left-(photos.find(p=>p.node===node)?.x||0);
       return {flow,node,width,height,isHero,isWindow,isLow,dpr,stripHeight,backgroundY,tilePixels,tile,heroSpeed,period,nightPeriod,phase,key,origin};

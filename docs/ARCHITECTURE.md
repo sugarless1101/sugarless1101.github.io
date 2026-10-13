@@ -6,7 +6,7 @@
 
 | 場所 | 役割 |
 | --- | --- |
-| `index.html` | 内容、見出し、作品・登壇・年譜・リンク、画像の土台、メニュー、電線 SVG の入れ物。冒頭の短いスクリプトは保存された昼夜を初期表示に反映する。 |
+| `index.html` | 内容、見出し、作品・登壇・年譜・リンク、画像の土台、メニュー、電線 SVG の入れ物。冒頭の短いスクリプトは保存された昼夜を初期表示に反映する。次のスクリプトは読み込みの記録で、6秒以上かかった、または12秒で終わらなかった読み込みについて、届いたファイルと待っていた画像を、その端末の localStorage だけに残す（送信はしない）。`#diag` を付けて開くと読める。 |
 | `style.css` | 色・フォント・余白のトークン、レイアウト、文字と器具の表示、昼夜、画面幅と動きを減らす設定の規則。 |
 | `main.js` | 即時実行関数内で DOM を組み立て、位置を測定し、操作と演出を動かす。外部ライブラリへの依存はない。 |
 | `images/` 直下 | 空の背景画像や月など、共通の画像。 |
@@ -49,6 +49,7 @@
 | `spawnFirework`、`drawFirework`、`paintFireworks`、`clearFinalEffects` | 夜の最後の場面の花火。文字・空の領域を避けて出し、画面外や昼夜切り替えで後始末する。 |
 | `refreshGeometry`、`geometry`、`queueGeometry`、`layoutBox` | 位置の一度読みのキャッシュ。画像・文字・電線・画面の位置を測り、毎フレームの計算に渡す。リサイズ・フォント読み込み・絞り込みなどの後に再測定する。 |
 | `observer`、`renderObserver`、`inView`、`syncSceneDormancy`、`visibleAnimation` | 画面内外を管理する。画面外の所有者の演出を休止し、再表示時に使える土台を残す。 |
+| `decoded`、`pendingAssets` | 画像の読み込みの待ち。Safari の `decode()` が終わらない・失敗する場合でも、届いた画像は3秒で表示する。待っている画像は `#diag` の記録に出る。 |
 | `chromeTints`、`syncChromeTints`、`syncThemeColor` | iPhone の Safari の上下の帯と、ページの外の色。トップや最後の場面が画面の端を覆う間、`html` に `chrome-top` / `chrome-bottom` を付け、`html`・`body` の背景色と `theme-color` を空の色にする（紙の色は `main` が持つ。根の CSS 変数は使わない。子に引き継がれ、ページ全体の再計算になるため）。判断はスクロールのたびに `geometry` のキャッシュで行い、変わったときだけ書き換える。 |
 | `spawnContrail`、`paintWindowTrails`、`paintContrailGlints` | 空や窓の飛行機雲と、その光。文字との間隔を測定済みの領域から計算する。 |
 | `spawnFlock`、`paintFlocks` | 空を飛ぶ鳥の群れ。近くの鳥・空の範囲・風を使って進む。 |
